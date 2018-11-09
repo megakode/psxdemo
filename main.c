@@ -29,6 +29,9 @@
 
 #define CUBE_ROT_PR_FRAME 48
 #define CUBE_ROT_OFFSET_PR_COL 150
+#define CUBE_MOVE_PR_FRAME 2
+
+#define NUM_FRAMES_BETWEEN_ADVANCE_SCROLL 8
 
 const char *scrollText = "REVISION 2019   ";
 int scrollTextLetterIndex = 0;
@@ -187,6 +190,7 @@ void advanceScrollText()
 {
 	int x,y;
 	char currentLetter = scrollText[scrollTextLetterIndex];
+	int pixelsToMoveCubesBack = (NUM_FRAMES_BETWEEN_ADVANCE_SCROLL) * CUBE_MOVE_PR_FRAME;
 	
 	// Move all data left
 	
@@ -198,7 +202,7 @@ void advanceScrollText()
 		
 			cubeColors[ cubeIndex ] = cubeColors[ cubeIndex+1 ];
 			cubes[cubeIndex].yrot = cubes[cubeIndex+1].yrot;
-			cubes[cubeIndex].xpos += 15;
+			cubes[cubeIndex].xpos += pixelsToMoveCubesBack;
 		}
 	}
 	
@@ -281,8 +285,8 @@ void doCubes()
 		int y,x = 0;
 		for( i = 0 ; i < NUMBER_OF_CUBES ; i++ )
 		{
-			cubes[i].xpos = 10 + x*15;
-			cubes[i].ypos = 10 + y*15;
+			cubes[i].xpos = 10 + x*16;
+			cubes[i].ypos = 10 + y*14;
 			cubes[i].zpos = 100;
 	
 			/*cubes[i].xrot = x*150;
@@ -383,7 +387,7 @@ void doCubes()
 			
 			//cubes[cubeIndex].yrot += 30;
 			cubes[cubeIndex].yrot += CUBE_ROT_PR_FRAME;
-			cubes[cubeIndex].xpos -= 1;
+			cubes[cubeIndex].xpos -= CUBE_MOVE_PR_FRAME;
 			//cubes[cubeIndex].zrot += 40;
 			
 		}
@@ -393,25 +397,15 @@ void doCubes()
 		
 		// 1024 / CUBE_ROT_PR_FRAME
 		// 4096 = full rotation. 1024 = one quarter (which we need), as we do xrot += 32 pr step it is 32 steps to reach 1024
+		scrollTrigger++;
 		
-		if(scrollTrigger == 14){ 
+		if(scrollTrigger == NUM_FRAMES_BETWEEN_ADVANCE_SCROLL){ 
 		
 			scrollTrigger = 0;
 			
-			// Move cubes back 
-			/*
-			for( cubeIndex = 0 ; cubeIndex < NUMBER_OF_CUBES ; cubeIndex++ )
-			{
-				cubes[cubeIndex].xpos += 15;
-			}
-			*/
 			advanceScrollText();
 			
 		
-		} else {
-		
-			scrollTrigger++;
-			
 		}
 				
 		
