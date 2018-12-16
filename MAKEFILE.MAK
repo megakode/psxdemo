@@ -1,6 +1,8 @@
 all:
 	del main.exe
-	ccpsx -O -G 0 -comments-c++ -Xo$80010000 \psx\lib\none3.obj main.c -omain.cpe,main.sym
+	ccpsx -c -O main.c -omain.obj -comments-c++ 
+	dmpsx main.obj
+	ccpsx -O -Xo$80010000 main.obj -omain.cpe
 	cpe2x /ce main.cpe
 
 
