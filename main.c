@@ -352,6 +352,7 @@ void doCubes()
 		ClearOTagR(currentCubeSceneBuffer->ot, CUBE_OTSIZE);	
 		DrawSync(0);
 
+		cpuCounter=-VSync(1);
 		
 		for( cubeIndex = 0 ; cubeIndex < NUMBER_OF_CUBES ; cubeIndex++ )
 		{
@@ -430,7 +431,7 @@ void doCubes()
 			//cubes[cubeIndex].zrot += 40;
 			
 		}
-		
+		cpuCounter+=VSync(1);
 		// ***************************************
 		/*
 		cdb = (cdb==db)? db+1: db;
@@ -451,7 +452,7 @@ void doCubes()
 
 
 		
-		cpuCounter=VSync(1);
+		//cpuCounter+=VSync(1);
 		
 		VSync(0);
 		
@@ -461,8 +462,10 @@ void doCubes()
 		DrawOTag(currentCubeSceneBuffer->ot+CUBE_OTSIZE-1);
 		
 		
-		FntPrint("c=%d\n",cpuCounter);
+		FntPrint("CPU: %d%%\n",(int)((float)cpuCounter/(float)256*100));
 		FntFlush(-1);
+		
+		
 
 		// 1024 / CUBE_ROT_PR_FRAME
 		// 4096 = full rotation. 1024 = one quarter (which we need), as we do xrot += 32 pr step it is 32 steps to reach 1024
