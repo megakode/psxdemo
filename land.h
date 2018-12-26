@@ -394,6 +394,13 @@ void doLandscape()
 	SetDefDispEnv(&landscapeSceneBuffers[0]->disp, 0, 256, 320, 256);
 	SetDefDispEnv(&landscapeSceneBuffers[1]->disp, 0,   0, 320, 256);
 	
+	// PAL setup
+	landscapeSceneBuffers[1]->disp.screen.x = landscapeSceneBuffers[0]->disp.screen.x = 1;
+	landscapeSceneBuffers[1]->disp.screen.y = landscapeSceneBuffers[0]->disp.screen.y = 18;
+	landscapeSceneBuffers[1]->disp.screen.h = landscapeSceneBuffers[0]->disp.screen.h = 256;
+	landscapeSceneBuffers[1]->disp.screen.w = landscapeSceneBuffers[0]->disp.screen.w = 320;
+	
+	
 	SetFarColor(0,0,0);
 	SetBackColor(100,100,100);
 	SetFogNearFar(near,far,SCR_Z); // 0% fog at , 100% fog at, "distance between visual point and screen"

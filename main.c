@@ -14,6 +14,8 @@
 
 #include "dsrlib.h" // Desire lib
 
+#include "Sinsweep.h"
+
 #include "land.h"
 
 
@@ -21,27 +23,28 @@
 // Cube mosaic 
 // *************************************************************
 
+#define CUBESCENE_X_RES 320
+#define CUBESCENE_Y_RES 256
+
 #define CUBE_OTSIZE 1024
 #define CUBE_ROWS 8
 #define CUBE_COLS 13
 #define NUMBER_OF_CUBES CUBE_ROWS*CUBE_COLS
 #define POLYS_PER_CUBE 12
 
-#define CUBE_ROT_PR_FRAME 48
-#define CUBE_ROT_OFFSET_PR_COL 150
-/*
+#define CUBE_ROT_PR_FRAME 32
+#define CUBE_ROT_OFFSET_PR_COL 100
+
 #define CUBE_MOVE_PR_FRAME 4
-#define NUM_FRAMES_BETWEEN_ADVANCE_SCROLL 4
-#define HORIZ_DISTANCE_BETWEEN_CUBES (CUBE_MOVE_PR_FRAME * NUM_FRAMES_BETWEEN_ADVANCE_SCROLL)
-*/
-#define CUBE_MOVE_PR_FRAME 2
 #define NUM_FRAMES_BETWEEN_ADVANCE_SCROLL (HORIZ_DISTANCE_BETWEEN_CUBES / CUBE_MOVE_PR_FRAME)
-#define HORIZ_DISTANCE_BETWEEN_CUBES 12
-#define VERT_DISTANCE_BETWEEN_CUBES 12
+#define HORIZ_DISTANCE_BETWEEN_CUBES 16
+#define VERT_DISTANCE_BETWEEN_CUBES 14
+#define CS (10 / 2) // half because all points are offset from the cube center by this value
 
 const char *scrollText = "REVISION 2019   ";
 int scrollTextLetterIndex = 0;
 int scrollTextPixelIndex = 0;
+int sinIndex = 0;
 
 #define SCR_Z (512)	/* screen depth */
 
@@ -70,6 +73,26 @@ typedef struct {
 
 typedef struct {
 
+	CVECTOR color;
+	CVECTOR colorOut;
+	int cubeVertIndex;
+	int polyIndex;
+			
+	MATRIX m;
+	SVECTOR	rotVec;
+	VECTOR	posVec;
+			
+	MATRIX	inverseLightMatrix;
+	SVECTOR inverseLightVector;
+	SVECTOR lightDirVec;
+	/* Local Light Matrix */
+	MATRIX	llm;
+
+} CubeScratchPad;
+
+
+typedef struct {
+
 	int textOffset; // pixel offset into the scroll text that the cube column is currently showing
 
 } CubeColumn;
@@ -84,7 +107,6 @@ char cubeColors[NUMBER_OF_CUBES];
 
 // Cube vertices (cube with center origin)
 
-#define CS (8 / 2) // half because all points are offset from the cube center by this value
 static  SVECTOR cubeV1 = {-CS,-CS,-CS,0};
 static  SVECTOR cubeV2 = {CS,-CS,-CS,0};
 static  SVECTOR cubeV3 = {-CS,CS,-CS,0};
@@ -169,22 +191,12 @@ inline void translateAndAddPoly(u_long *ot, POLY_F3 *poly,SVECTOR *v0,SVECTOR *v
 	CVECTOR colorOut;
 	int	isomote;
 	long	p, otz, opz, flg;
-/*
-	isomote = RotAverageNclipColorCol3(v0, v1, v2, 
-		n,n,n,
-		colorIn,
-		(long *)&poly->x0, (long *)&poly->x1,(long *)&poly->x2, 
-		(CVECTOR*)&colorOut,(CVECTOR*)&colorOut,(CVECTOR*)&colorOut,
-		&otz, 
-		&flg);
-		*/
 		
 	gte_RotAverageNclip3(v0, v1, v2, 
 		(long *)&poly->x0, (long *)&poly->x1,(long *)&poly->x2, 
 		&p,
 		&otz,
 		&flg,&isomote);
-	
 		
 	if (isomote <= 0) return;
 
@@ -212,7 +224,7 @@ void advanceScrollText()
 	
 	for( y = 0 ; y < CUBE_ROWS ; y++ )
 	{
-		for( x = 0 ; x < CUBE_COLS-1 ; x++ )
+		for( x = 0 ; x < CUBE_COLS ; x++ )
 		{
 			int cubeIndex = y*CUBE_COLS + x;
 		
@@ -258,9 +270,18 @@ void advanceScrollText()
 
 void doCubes()
 {
+	SVECTOR lightDirVec = {1000,0,4000};
+	MATRIX	lcm = { 4095,0,0, 
+							4095,0,0, 
+							4095,0,0, 
+							0,0,0};
+							
 	int cpuCounter = 0;
 	int scrollTrigger = 0;
 	SVECTOR *cubeDefs = (SVECTOR *) getScratchAddr(0);
+	CubeScratchPad *cubeScratchPad = (CubeScratchPad *) getScratchAddr( (sizeof(SVECTOR)*12*3)>>2 );
+	
+	
 	
 	ResetGraph(0);
 	ResetCallback();
@@ -280,10 +301,17 @@ void doCubes()
 	cubeSceneBuffers[1] = (CubeMosaicScene*)malloc(sizeof(CubeMosaicScene));
 	cubes = (Cube*)malloc(sizeof(Cube)*NUMBER_OF_CUBES);
 	
-	SetDefDrawEnv(&cubeSceneBuffers[0]->draw, 0,   0, 320, 256);
-	SetDefDrawEnv(&cubeSceneBuffers[1]->draw, 0, 256, 320, 256);
-	SetDefDispEnv(&cubeSceneBuffers[0]->disp, 0, 256, 320, 256);
-	SetDefDispEnv(&cubeSceneBuffers[1]->disp, 0,   0, 320, 256);
+	SetDefDrawEnv(&cubeSceneBuffers[0]->draw, 0,   0, CUBESCENE_X_RES, CUBESCENE_Y_RES);
+	SetDefDrawEnv(&cubeSceneBuffers[1]->draw, 0, CUBESCENE_Y_RES, CUBESCENE_X_RES, CUBESCENE_Y_RES);
+	SetDefDispEnv(&cubeSceneBuffers[0]->disp, 0, CUBESCENE_Y_RES, CUBESCENE_X_RES, CUBESCENE_Y_RES);
+	SetDefDispEnv(&cubeSceneBuffers[1]->disp, 0,   0, CUBESCENE_X_RES, CUBESCENE_Y_RES);
+	
+	// PAL setup
+	cubeSceneBuffers[1]->disp.screen.x = cubeSceneBuffers[0]->disp.screen.x = 1;
+	cubeSceneBuffers[1]->disp.screen.y = cubeSceneBuffers[0]->disp.screen.y = 18;
+	cubeSceneBuffers[1]->disp.screen.h = cubeSceneBuffers[0]->disp.screen.h = 256;
+	cubeSceneBuffers[1]->disp.screen.w = cubeSceneBuffers[0]->disp.screen.w = 320;
+	
 	cubeSceneBuffers[0]->draw.isbg = 1;
 	cubeSceneBuffers[1]->draw.isbg = 1;
 	setRGB0(&cubeSceneBuffers[0]->draw, 0, 0, 0);
@@ -314,14 +342,11 @@ void doCubes()
 		int y,x = 0;
 		for( i = 0 ; i < NUMBER_OF_CUBES ; i++ )
 		{
-			cubes[i].xpos = 10 + x*HORIZ_DISTANCE_BETWEEN_CUBES;
-			cubes[i].ypos = 10 + y*VERT_DISTANCE_BETWEEN_CUBES;
+			cubes[i].xpos = x*HORIZ_DISTANCE_BETWEEN_CUBES;
+			cubes[i].ypos = y*VERT_DISTANCE_BETWEEN_CUBES;
 			cubes[i].zpos = 100;
 	
-			/*cubes[i].xrot = x*150;
-			cubes[i].yrot = 150;
-			cubes[i].zrot = 150;
-			*/
+
 			cubes[i].xrot = 256;
 			cubes[i].yrot = (x+y)*CUBE_ROT_OFFSET_PR_COL;
 			cubes[i].zrot = 0;
@@ -333,20 +358,20 @@ void doCubes()
 			}
 		}
 	}
-	
-	FntLoad(960,256);
-	SetDumpFnt(FntOpen(64, 64, 64, 10, 1, 512));
+		
+	//FntLoad(960,256);
+	//SetDumpFnt(FntOpen(64, 64, 200, 20, 1, 512));
 	
 	// Do cube scene
+	
+	gte_SetColorMatrix(&lcm);
 	
 	while(1)
 	{
 		
 		int cubeIndex = 0;
-		unsigned long *oldSP;
 		
 		currentCubeSceneBuffer  = (currentCubeSceneBuffer == cubeSceneBuffers[0]) ? cubeSceneBuffers[1] : cubeSceneBuffers[0];
-		
 		
 		
 		ClearOTagR(currentCubeSceneBuffer->ot, CUBE_OTSIZE);	
@@ -354,105 +379,89 @@ void doCubes()
 
 		cpuCounter=-VSync(1);
 		
+		
+		sinIndex++;
+		
+		if( sinIndex >= SINSWEEP_LEN-CUBE_COLS ){
+			sinIndex = 0;
+		}
+		
 		for( cubeIndex = 0 ; cubeIndex < NUMBER_OF_CUBES ; cubeIndex++ )
 		{
-			int cubeVertIndex = 0;
 			int polyIndex = 0;
+			int cubeVertIndex = 0;
+			int column = (cubeIndex % CUBE_COLS);
+			int ysin = (sinsweep[sinIndex+column]>>2) - 20;
 			
-			MATRIX m;
 			SVECTOR	rotVec  = {cubes[cubeIndex].xrot,cubes[cubeIndex].yrot,cubes[cubeIndex].zrot};
-			VECTOR	posVec  = {cubes[cubeIndex].xpos,cubes[cubeIndex].ypos,cubes[cubeIndex].zpos,0};
+			VECTOR	posVec  = {cubes[cubeIndex].xpos+(ysin>>1),cubes[cubeIndex].ypos + ysin,cubes[cubeIndex].zpos,0};
 			
-			MATRIX	inverseLightMatrix;
-			SVECTOR inverseLightVector;
-			SVECTOR lightDirVec = {1000,0,4000};
-			/* Local Light Matrix */
-			MATRIX	llm;
-
-			/* Local Color Matrix */
-			MATRIX	lcm = { 4095,0,0, 
-							4095,0,0, 
-							4095,0,0, 
-							0,0,0};
-
+			
+			
 	
 			// Create a rotation matrix for the light, with the negated rotation from the cube.
 			
-			inverseLightVector.vx = -rotVec.vx;
-			inverseLightVector.vy = -rotVec.vy;
-			inverseLightVector.vz = -rotVec.vz;
+			cubeScratchPad->inverseLightVector.vx = -rotVec.vx;
+			cubeScratchPad->inverseLightVector.vy = -rotVec.vy;
+			cubeScratchPad->inverseLightVector.vz = -rotVec.vz;
 			
 			
-			RotMatrixZYX_gte(&inverseLightVector,&inverseLightMatrix); // The reverse axis sequence of the normal RotMatrix() function, to counter the rotation
-			ApplyMatrixSV(&inverseLightMatrix,(SVECTOR*)&lightDirVec,(SVECTOR*)&llm);
-
-			gte_SetColorMatrix(&lcm);
-			gte_SetLightMatrix(&llm);
+			// The reverse axis sequence of the normal RotMatrix() function, to counter the rotation
+			RotMatrixZYX_gte(&cubeScratchPad->inverseLightVector,&cubeScratchPad->inverseLightMatrix); 
+			gte_ApplyMatrixSV(&cubeScratchPad->inverseLightMatrix,(SVECTOR*)&lightDirVec,(SVECTOR*)&cubeScratchPad->llm);
+			gte_SetLightMatrix(&cubeScratchPad->llm);
 
 			// Set position and rotation matrix for current cube, before translating polygon
-			RotMatrix_gte(&rotVec, &m);
-			TransMatrix(&m,&posVec);
-			gte_SetRotMatrix(&m);	
-			gte_SetTransMatrix(&m);
+			RotMatrix_gte(&rotVec, &cubeScratchPad->m);
+			TransMatrix(&cubeScratchPad->m,&posVec);
 			
-			// ********************************
+			gte_SetRotMatrix(&cubeScratchPad->m);	
+			gte_SetTransMatrix(&cubeScratchPad->m);
+			
+
+			// Calculate color, light and 2D translation for each polygon on current cube
 			
 			for( polyIndex = 0; polyIndex < POLYS_PER_CUBE ; polyIndex++ )
-			{
-				CVECTOR color = {150,32,0}; // 80,x,x
+			{			
+				POLY_F3 *poly = &currentCubeSceneBuffer->cubePolys[cubeIndex*POLYS_PER_CUBE + polyIndex];
+				int	isomote;
+				long	p, otz, opz, flg;
 				
-				if(cubeColors[cubeIndex] > 0 ){ // && polyIndex < 2
-					color.r = 255;
-					color.g = 210;
-					color.b = 122;
+				if(cubeColors[cubeIndex] > 0){ // && polyIndex < 2
+					cubeScratchPad->color.r = 255;
+					cubeScratchPad->color.g = 210;
+					cubeScratchPad->color.b = 255;
+				} else {
+					cubeScratchPad->color.r = sinsweep[sinIndex+column];
+					cubeScratchPad->color.g = 32;
+					cubeScratchPad->color.b = column * 20;
 				}
+				
 
-				
-				
-				translateAndAddPoly(currentCubeSceneBuffer->ot,
-									&currentCubeSceneBuffer->cubePolys[cubeIndex*POLYS_PER_CUBE + polyIndex],
-									&cubeDefs[cubeVertIndex],
-									&cubeDefs[cubeVertIndex+1],
-									&cubeDefs[cubeVertIndex+2],
-									cubeNormals[polyIndex>>1],
-									&color);
+				gte_RotAverageNclip3(&cubeDefs[cubeVertIndex], &cubeDefs[cubeVertIndex+1], &cubeDefs[cubeVertIndex+2], 
+				(long *)&poly->x0, (long *)&poly->x1,(long *)&poly->x2, 
+				&p,
+				&otz,
+				&flg,&isomote);
+
+
+				if (isomote > 0) // If poly is facing the camera...
+				{
+					// Get local light value..
+					gte_NormalColorCol(cubeNormals[polyIndex>>1], &cubeScratchPad->color, &cubeScratchPad->colorOut);
+					// and apply it to surface
+					setRGB0(poly,cubeScratchPad->colorOut.r,cubeScratchPad->colorOut.g,cubeScratchPad->colorOut.b);
+					addPrim(currentCubeSceneBuffer->ot+otz, poly);
+				}
 			
+			// ***********************************
 									
 				cubeVertIndex += 3;
 			}
 			
-			
-			
-			
-			
-			//cubes[cubeIndex].yrot += 30;
-			//cubes[cubeIndex].yrot += CUBE_ROT_PR_FRAME;
-			//cubes[cubeIndex].xpos -= CUBE_MOVE_PR_FRAME;
-			//cubes[cubeIndex].zrot += 40;
-			
+
 		}
 		cpuCounter+=VSync(1);
-		// ***************************************
-		/*
-		cdb = (cdb==db)? db+1: db;
-		abuf = 1-(cdb==db);
-
-	   	ClearOTagR(cdb->ot, OTSIZE);
-	   	DrawSync(0);		
-
-		add_cube(abuf,&rottrans);
-
-	   	VSync(0);	
-	
-	   	PutDrawEnv(&cdb->draw); 
-	   	PutDispEnv(&cdb->disp); 
-
-	   	DrawOTag(cdb->ot+OTSIZE-1);	
-		*/
-
-
-		
-		//cpuCounter+=VSync(1);
 		
 		VSync(0);
 		
@@ -462,8 +471,9 @@ void doCubes()
 		DrawOTag(currentCubeSceneBuffer->ot+CUBE_OTSIZE-1);
 		
 		
-		FntPrint("CPU: %d%%\n",(int)((float)cpuCounter/(float)256*100));
-		FntFlush(-1);
+		//FntPrint("CPU: %d%% \n sinsweep:%d index=%d",(int)((float)cpuCounter/(float)256*100) , sinsweep[sinIndex]>>1,sinIndex);
+
+		//FntFlush(-1);
 		
 		
 
