@@ -3,6 +3,9 @@
 #include <libgte.h>
 #include <libgpu.h>
 
+#include "dsr128.h" // TIM dsrlogo.png
+#include "font.h" // TIM font.png
+
 #define LAND_NUM_HORIZ_CELLS 25
 #define LAND_NUM_VERT_CELLS 25
 
@@ -17,7 +20,7 @@
 #define PERLIN_DEPTH 6
 
 #define	LAND_OTSIZE	(4096)
-#define SCR_Z (512)	/* screen depth */
+#define PROJ_Z (512)	/* screen depth */
 
 #include "perlin.h"
 
@@ -379,7 +382,7 @@ void doLandscape()
 	
 	InitGeom();
 	SetGeomOffset(160, 128);	
-	SetGeomScreen(SCR_Z);	
+	SetGeomScreen(PROJ_Z);	
 	SetVideoMode(MODE_PAL);
 	SetDispMask(1);
 	
@@ -403,7 +406,7 @@ void doLandscape()
 	
 	SetFarColor(0,0,0);
 	SetBackColor(100,100,100);
-	SetFogNearFar(near,far,SCR_Z); // 0% fog at , 100% fog at, "distance between visual point and screen"
+	SetFogNearFar(near,far,PROJ_Z); // 0% fog at , 100% fog at, "distance between visual point and screen"
 	
 	initLandscapeCells();
 	
@@ -431,7 +434,7 @@ void doLandscape()
 		if (pad & PADRup)	far += 100;
 		if (pad & PADRdown)	far -= 100;
 
-		SetFogNearFar(near,far,SCR_Z); // 0% fog at , 100% fog at, "distance between visual point and screen"
+		SetFogNearFar(near,far,PROJ_Z); // 0% fog at , 100% fog at, "distance between visual point and screen"
 		
 		ClearOTagR(cdb->ot, LAND_OTSIZE);	
 		
