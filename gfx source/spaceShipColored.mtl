@@ -1,0 +1,36 @@
+# MTL written from E:\nextCloud\projects\desire\playstation\spaceShipColored.obj
+newmtl Blue
+Kd 0.020993 0.164063 0.416796
+Ns 256
+d 1
+illum 2
+Ka 0 0 0
+Ks 0.04 0.04 0.04
+newmtl Default
+Kd 0.48 0.48 0.48
+Ns 256
+d 1
+illum 2
+Ka 0 0 0
+Ks 0.04 0.04 0.04
+newmtl FX
+Kd 0.671039 0 0.671039
+Ns 256
+d 1
+illum 2
+Ka 0 0 0
+Ks 0.04 0.04 0.04
+newmtl Glass
+Kd 0.00448432 0.00559634 0.0092898
+Ns 256
+d 1
+illum 2
+Ka 0 0 0
+Ks 0.04 0.04 0.04
+newmtl Yellow
+Kd 0.8 0.488397 0.10195
+Ns 256
+d 1
+illum 2
+Ka 0 0 0
+Ks 0.04 0.04 0.04

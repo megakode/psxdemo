@@ -7,115 +7,223 @@
 #include <Inline_c.h>
 #include <libgs.h>
 
-#include "dsrlib.h" // Desire lib
+#include <libapi.h>
 
-#include "Sinsweep.h"
+#include "dsrlib.h" 	// Desire lib
+#include "land.h" 		// Land fly-over intro scene
+#include "cubescroll.h"	// Cube scroller
+#include "picture.h"	// show picture
 
-#include "land.h"
+// #include "war320.h"		// GFX: war of the worlds picture data
+#include "dsrpsx.h" 		// GFX: Desire PSX logo
 
-#include "cubes.h"
-
-#include "war320.h"
-
-
-#define OTSIZE_WAR 100
-#define CELL_ROWS 12
-#define CELL_COLS 20
-
-#define PT_UX	16			/* cell size (in UV space) */
-#define PT_UY	16
-
-#define MAX_SHRINK_AMOUNT 8
-
+#define OTSIZE 10
 typedef struct {		
 	DRAWENV		draw;			/* drawing environment */
 	DISPENV		disp;			/* display environment */
-	u_long		ot[OTSIZE_WAR];		/* ordering table */
-	POLY_FT4	cell[CELL_ROWS*CELL_COLS];	/* mesh cell */
+	u_long		ot[OTSIZE];		/* ordering table */
+	TILE_1		*tiles;
 } DB;
 
 DB	db[2];		/* double buffer */
 DB	*cdb;		/* current double buffer */
-u_long	*ot;		/* current OT */
+u_long	*ot;	/* current OT */
 
-int cellShrinkAmount[CELL_ROWS*CELL_COLS];
+SVECTOR *stars;
+#define NUM_STARS 400
 
-// *************************************************************
-// Setup primitives
-// *************************************************************
+int sinTable[256];
+int sinTable2[256];
 
-static void setupPrimitives( DB *db )
-{	
-	int x,y,ux,uy;
-	POLY_FT4 *poly;
-	u_short	tpage,tpageLeft, tpageRight;	
+void doStars()
+{
+	int starsNearClip = 50;
+	int near = 250;
+	int far = 500;
+	u_long pad;
+	int max = 0;
+	int i;
+	int sinIndex;
+	SVECTOR *star;
+	SVECTOR rot = {0,0,0};
+	const static int screenWidth = 320;
+	const static int screenHeight = 256;
+	MATRIX	m = {4096,0,0,
+				 0,4096,0,
+				 0,0,4096,
+				 0,0,0};
+				 
+	for(i=0;i<255;i++){
+		sinTable[i] = sin((2*3.1415 / 256) * i)*500;
+		sinTable2[i] = sin((2*3.1415 / 256) * i)*200;
+		//printf("%d,",sinTable[i]);
+	}
 	
-	poly = db->cell;
-	tpageLeft = GetTPage(2, 0, 320,     0);	// 2 = 16bpp mode
-	tpageRight = GetTPage(2, 0, 320+256, 0); 
-	tpage = tpageLeft;
+	/* initialize environment for double buffer */
+	SetDefDrawEnv(&db[0].draw, 0,   0, screenWidth, screenHeight);
+	SetDefDrawEnv(&db[1].draw, 0, screenHeight, screenWidth, screenHeight);
+	SetDefDispEnv(&db[0].disp, 0, screenHeight, screenWidth, screenHeight);
+	SetDefDispEnv(&db[1].disp, 0,   0, screenWidth, screenHeight);
 	
-	ux = 0; uy = 0;
+	// PAL setup
+	db[1].disp.screen.x = db[0].disp.screen.x = 1;
+	db[1].disp.screen.y = db[0].disp.screen.y = 18;
+	db[1].disp.screen.h = db[0].disp.screen.h = screenHeight;
+	db[1].disp.screen.w = db[0].disp.screen.w = screenWidth;
 	
-	for( y = 0 ; y < CELL_ROWS; y++, uy += PT_UY )
-	for( x = 0 , ux = 0; x < CELL_COLS; x++, ux += PT_UX )
+	// Set background clear color
+	db[0].draw.isbg = 1;
+	db[1].draw.isbg = 1;
+	setRGB0(&db[0].draw, 0, 0, 0);
+	setRGB0(&db[1].draw, 0, 0, 0);
+
+	stars = (SVECTOR*) malloc(sizeof(SVECTOR)*NUM_STARS);
+	db[0].tiles = (TILE_1*) malloc(sizeof(TILE_1)*NUM_STARS);
+	db[1].tiles = (TILE_1*) malloc(sizeof(TILE_1)*NUM_STARS);
+	star = stars;
+	
+	for( i = 0; i < NUM_STARS ; i++ , star++ )
 	{
-		int px = x<<4;
-		int py = y<<4;
+		star->vx = (rand() % 256) - 128;
+		star->vy = (rand() % 256) - 128;
+		star->vz = (rand() % (128-starsNearClip)) + starsNearClip;
 		
-
-		tpage = ux > 255 ? tpageRight : tpageLeft;
+		setTile1(&db[0].tiles[i]);
+		setTile1(&db[1].tiles[i]);
+		db[0].tiles[i].r0 = 250;
+		db[0].tiles[i].g0 = 250;
+		db[0].tiles[i].b0 = 250;
+		db[1].tiles[i].r0 = 250;
+		db[1].tiles[i].g0 = 250;
+		db[1].tiles[i].b0 = 250;
 		
-		
-		SetPolyFT4(poly);		/* FlatTexture Quadrangle */
-		SetShadeTex(poly, 1);	/* no shade-texture */
-			
-		//setRGB0(poly,128,128,128);
-		setXY4(poly,
-			   px,py,
-			   px+16,py,
-			   px,py+16,
-			   px+16,py+16
-			   );
-				   
-		setUV4(poly, ux, uy, 
-					 ux+PT_UX-1, uy,
-					 ux, uy+PT_UY-1, 
-					 ux+PT_UX-1, uy+PT_UY-1);
-					 
-		
-			
-		poly->tpage = tpage;
+	}
 	
-		poly++;
+	
+	RotMatrix_gte(&rot, &m);
+	
+	SetTransMatrix(&m);
+	
+	PadInit(0);
+	
+	//dumpMatrix(&m);
+	
+	SetFogNearFar(near,far,PROJ_Z);
+	
+	while(1)
+	{
+		CVECTOR colorIn,colorOut;
+		
+		cdb = (cdb==db)? db+1: db;	/* swap double buffer ID */	
+		ClearOTag(cdb->ot, OTSIZE);	/* clear ordering table */
+		
+		//rot.vx+=10;
+		//rot.vy+=3;
+		rot.vz = sinTable[sinIndex];
+		//rot.vy = sinTable2[sinIndex];
+		rot.vx = sinTable2[sinIndex]>>1;
+		
+		sinIndex++;
+		if(sinIndex>=256){
+			sinIndex=0;
+		}
+		
+		RotMatrix_gte(&rot, &m);
+		SetRotMatrix(&m);
+		
+		pad = PadRead(0);
+		
+		//if( pad & PADLleft) doFadeClut(320,128);
+		/*
+		if (pad & PADLup){	near += 10;SetFogNearFar(near,far,PROJ_Z); ; printf("near=%u\n",near); };
+		if (pad & PADLdown){ near -= 10; SetFogNearFar(near,far,PROJ_Z);printf("near=%u\n",near); };
+		if (pad & PADRup){	far += 10; SetFogNearFar(near,far,PROJ_Z);printf("far=%u\n",far); }
+		if (pad & PADRdown){	far -=10; SetFogNearFar(near,far,PROJ_Z);printf("far=%u\n",far); }
+		
+		if (pad & PADLup){	starsNearClip += 1; printf("starsNearClip=%u\n",starsNearClip); };
+		if (pad & PADLdown){ starsNearClip -= 1; printf("starsNearClip=%u\n",starsNearClip); };
+		*/
+		for( star = stars, i = 0; i < NUM_STARS ; i++ ,star++)
+		{
+			long p,flag,sz;
+			u_long pad;
+			
+			star->vz -= 1;
+			
+			//if(star->vz < 60 )
+			{/*
+				if( star->vx <= 0 ){
+					star->vx--;
+				} else {
+					star->vx++;
+				}
+				*/
+				/*
+				if( star->vy <= 0 ){
+					star->vy--;
+				} else {
+					star->vy++;
+				}
+				*/
+			}
+			/*
+			if( star->vz <= starsNearClip ){
+				star->vz = 128;
+				star->vx = (rand() % 256) - 128;
+				star->vy = (rand() % 256) - 128;
+			}
+			*/
+			
+			
+			
+			sz = RotTransPers(star,(long *)&cdb->tiles[i].x0,&p,&flag);
+			/*
+			if(sz>max){
+				max = sz;
+				printf("sz=%d\n",sz);
+			}
+			
+			color = (75-sz)*5;
+			*/
+			colorIn.r = 255;
+			colorIn.g = 255;
+			colorIn.b = 255;
+			DpqColor(&colorIn,p,&colorOut);
+			cdb->tiles[i].r0 = colorOut.r;
+			cdb->tiles[i].g0 = colorOut.g;
+			cdb->tiles[i].b0 = colorOut.b;
+			
+			//cdb->tiles[i].r0 = cdb->tiles[i].g0 = cdb->tiles[i].b0 = (color & 0xff);
+			
+			//printf("star.z=%d sz=%d\n",star->vz, sz);
+			
+			if( (flag & 1<<17) )
+			{
+				star->vz = 128;
+				star->vx = (rand() % 256) - 128;
+				star->vy = (rand() % 256) - 128;	
+			} else {
+				AddPrim(cdb->ot, &cdb->tiles[i]);
+			}
+		}
+	
+		
+		DrawSync(0);
+		VSync(0);
+		PutDrawEnv(&cdb->draw); /* update drawing environment */
+		PutDispEnv(&cdb->disp); /* update display environment */
+		DrawOTag(cdb->ot);	  /* draw */
+	
 	}
 	
 
 }
 
-// *************************************************************
-//   Main
-// *************************************************************
-
-int main(){
-
-	int i;
-	typedef enum {
-		FadeIn,
-		ShowPicture,
-		FadeOut,
-		Done
-	} State;
+int main()
+{
+InitGeom();
 	
-	State state = FadeIn;
-	int ticks = 0;
-	int shrinkingLine = 0;
-	int shrinkTrigger = 0;
-	int shrinkAdvanceLineTrigger = 0;
-	
-	POLY_FT4 *poly;
-
-	InitGeom();
+	SetDispMask(0);
 	
 	ResetGraph(0);
 	ResetCallback();
@@ -123,186 +231,16 @@ int main(){
 	SetGraphDebug(0);
 	
 	InitGeom();
-	//SetGeomOffset(160, 128);
-	SetGeomOffset(0, 0);
-	SetGeomScreen(1024);
+	SetGeomOffset(160, 128);
+	SetGeomScreen(100);
 	SetVideoMode(MODE_PAL);
-	
 
-	/* initialize environment for double buffer */
-	SetDefDrawEnv(&db[0].draw, 0,   0, 320, 256);
-	SetDefDrawEnv(&db[1].draw, 0, 256, 320, 256);
-	SetDefDispEnv(&db[0].disp, 0, 256, 320, 256);
-	SetDefDispEnv(&db[1].disp, 0,   0, 320, 256);
-	
-	
-	// PAL setup
-	db[1].disp.screen.x = db[0].disp.screen.x = 1;
-	db[1].disp.screen.y = db[0].disp.screen.y = 18;
-	db[1].disp.screen.h = db[0].disp.screen.h = 256;
-	db[1].disp.screen.w = db[0].disp.screen.w = 320;
-	
-	// Set background clear color
-	db[0].draw.isbg = 1;
-	db[1].draw.isbg = 1;
-	setRGB0(&db[0].draw, 0, 0, 0);
-	setRGB0(&db[1].draw, 0, 0, 0);
-	
 	SetDispMask(1);
 	
-	setupPrimitives(&db[0]);	/* initialize primitive buffers #0 */
-	setupPrimitives(&db[1]);	/* initialize primitive buffers #1 */
-	
+	SetFarColor(10,10,10);
 
-	loadTIM(&war320);
-	
-	// *****
-	//
-	// Kig sample/graphics/morph.h for inspiration
-	//
-	// ******
-	
-	for(i = 0 ; i < CELL_ROWS*CELL_COLS ; i++)
-	{
-		cellShrinkAmount[i] = MAX_SHRINK_AMOUNT;
-	}
-	
-	
-	while(1)
-	{
-		int x,y;
-		SVECTOR debugVector;
-	
-		cdb = (cdb==db)? db+1: db;	/* swap double buffer ID */
-		
-		PutDrawEnv(&cdb->draw); /* update drawing environment */
-		PutDispEnv(&cdb->disp); /* update display environment */
-		
-		
-		ClearOTag(cdb->ot, OTSIZE_WAR);	/* clear ordering table */
-		
-		ticks++;
-		
-		if( state == FadeIn )
-		{
-			if(cellShrinkAmount[CELL_ROWS-1] > 0)
-			{	
-				shrinkTrigger++;
-				if(shrinkTrigger == 3)
-				{
-					shrinkTrigger = 0;
-					
-					// Start shrinking of next line?
-					shrinkAdvanceLineTrigger++;
-					if(shrinkAdvanceLineTrigger == 3 && shrinkingLine < CELL_COLS-2)
-					{
-						shrinkAdvanceLineTrigger = 0;
-						shrinkingLine++;
-					}
-				
-					// Shrink all the lines that are above 'shrinkingLine'
-					for(i = 0; i < shrinkingLine ; i++)
-					{
-						if(cellShrinkAmount[i] > 0)
-						{
-							cellShrinkAmount[i]--;
-						}
-					}
-					
-				}
-			
-			} else 
-			{
-				shrinkingLine = 0;
-				state = ShowPicture;	
-			}
-		
-		} 
-		else if( state == ShowPicture )
-		{
-			// Show picture
-			
-			if( ticks == 500 )
-			{
-				state = FadeOut;
-			}
-		
-		} else if( state == FadeOut )
-		{
-			// Fade out (line style)
-			
-			if(cellShrinkAmount[CELL_ROWS-1] < MAX_SHRINK_AMOUNT)
-			{	
-				shrinkTrigger++;
-				if(shrinkTrigger == 3)
-				{
-					shrinkTrigger = 0;
-					
-					// Start shrinking of next line?
-					shrinkAdvanceLineTrigger++;
-					if(shrinkAdvanceLineTrigger == 3 && shrinkingLine < CELL_COLS-2)
-					{
-						shrinkAdvanceLineTrigger = 0;
-						shrinkingLine++;
-					}
-				
-					// Shrink all the lines that are above 'shrinkingLine'
-					for(i = 0; i < shrinkingLine ; i++)
-					{
-						if(cellShrinkAmount[i] < MAX_SHRINK_AMOUNT)
-						{
-							cellShrinkAmount[i]++;
-						}
-					}
-					
-				}
-			
-			} else 
-			{
-				state = Done;	
-			}
-		
-		}
-		
-		
-		
-		/*
-		debugVector.vx = shrinkingLine;
-		debugVector.vy = cellShrinkAmount[CELL_ROWS-1];
-		debugVector.vz = 1;
-		dumpVector("debugVector=",&debugVector);
-		*/
-		
-		/* draw */
-		poly = cdb->cell;
-		
-		for( y = 0 ; y < CELL_ROWS; y++ )
-		for( x = 0 ; x < CELL_COLS; x++ , poly++)
-		{
-			int px = x<<4;
-			int py = y<<4;
-
-			setXY4(poly,
-				   px+cellShrinkAmount[y],py+cellShrinkAmount[y],
-				   px+16-cellShrinkAmount[y],py+cellShrinkAmount[y],
-				   px+cellShrinkAmount[y],py+16-cellShrinkAmount[y],
-				   px+16-cellShrinkAmount[y],py+16-cellShrinkAmount[y]
-				   );
-				   
-			AddPrim(cdb->ot+OTSIZE_WAR-1,poly);
-					   
-		}
-		
-		
-		DrawSync(0);		/* wait for end of drawing */
-		
-		DrawOTag(cdb->ot);	  /* draw */
-		
-		VSync(0);		/* wait for the next V-BLNK */
-
-
-	}
-
+	doStars();
+	//doPicture((u_long*)dsrpsx,256,200);
 	//doCubes();
 	//doLandscape();
 }

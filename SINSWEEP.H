@@ -1,5 +1,9 @@
 
 #define SINSWEEP_LEN 921+13
+
+// Used as a vertical axis wave in the cubescroll part
+
+
 // Added the first 13 bytes at the end of the file, to make wrap-around smoother with the rolling window we use
  static const unsigned char sinsweep[]=
  {

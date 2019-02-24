@@ -1,9 +1,18 @@
+
 all:
 	del main.exe
-	ccpsx -c -O main.c -omain.obj -comments-c++ 
-	dmpsx main.obj
-	ccpsx -O -Xo$80010000 main.obj -omain.cpe
+	ccpsx -c -O2 main.c -omain.obj -comments-c++ 
+	dmpsx main.obj -b
+	ccpsx -c -O2 picture.c -opicture.obj -comments-c++ 
+	ccpsx -c -O2 dsrlib.c -odsrlib.obj -comments-c++ 
+	ccpsx -c -O2 cubescroll.c -ocubesc.obj -comments-c++ 
+	asmpsx /g /l /oc+ /j c:\psyq\include cubeasm.asm,cubeasm.obj
+	dmpsx cubeasm.obj -b
+	dmpsx cubesc.obj -b
+	ccpsx -O -Xo$80010000 -Xm main.obj model.obj picture.obj dsrlib.obj cubeasm.obj cubesc.obj -omain.cpe,main.sym,main.map
 	cpe2x /ce main.cpe
 
 
 	del main.cpe
+
+

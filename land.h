@@ -3,7 +3,7 @@
 #include <libgte.h>
 #include <libgpu.h>
 
-#include "dsr128.h" // TIM dsrlogo.png
+#include "landlogo.h" // TIM dsrlogo.png
 #include "font.h" // TIM font.png
 
 #define LAND_NUM_HORIZ_CELLS 25
@@ -413,8 +413,8 @@ void doLandscape()
 	initLandscapePrimitives(landscapeSceneBuffers[0]);
 	initLandscapePrimitives(landscapeSceneBuffers[1]);
 	
-	loadTIM(&dsr128);
-	loadTIM(&font);
+	loadTIM((unsigned char*)&landlogo);
+	loadTIM((unsigned char*)&font);
 	
 	initFadeClut(320,128);
 
