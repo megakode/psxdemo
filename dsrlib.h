@@ -13,6 +13,44 @@
 #include <Inline_c.h>
 #include <libgs.h>
 
+
+// vertexData
+
+// int16 x;
+// int16 y;
+// int16 z;
+
+// faceData
+
+// uint16 vi1
+// uint16 vi2
+// uint16 vi3
+// uint16 ni1
+// uint16 ni2
+// uint16 ni3
+
+typedef struct {
+
+	short x;
+	short y;
+	short z;
+
+} ModelVertex;
+
+typedef struct {
+
+	// Vertex indexes
+	unsigned short vi1; 
+	unsigned short vi2;
+	unsigned short vi3;
+	
+	// Normal indexes
+	unsigned short ni1; 
+	unsigned short ni2; 
+	unsigned short ni3; 
+
+} ModelFace;
+
 // ************************************************************
 // Load TIM
 // ************************************************************
