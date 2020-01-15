@@ -87,7 +87,7 @@ void doPicture( u_long *tim , int screenWidth, int showPictureTicks)
 	TIM_IMAGE	header;
 	
 	POLY_F4 *poly;
-
+/*
 	InitGeom();
 	
 	ResetGraph(0);
@@ -96,13 +96,11 @@ void doPicture( u_long *tim , int screenWidth, int showPictureTicks)
 	SetGraphDebug(0);
 	
 	InitGeom();
-	//SetGeomOffset(160, 128);
+*/
 	SetGeomOffset(0, 0);
 	SetGeomScreen(1024);
-	SetVideoMode(MODE_PAL);
+	//SetVideoMode(MODE_PAL);
 	
-	
-
 	/* initialize environment for double buffer */
 	SetDefDrawEnv(&db[0].draw, 0,   0, screenWidth, screenHeight);
 	SetDefDrawEnv(&db[1].draw, 0, screenHeight, screenWidth, screenHeight);

@@ -2,7 +2,6 @@
 #define __dsr_h__
 
 #define FONT_X_OFFSET 640
-#define TEXT_SPRITES 100
 
 #include <sys/types.h>
 #include <libetc.h>

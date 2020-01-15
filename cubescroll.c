@@ -13,6 +13,8 @@
 #include "biosfont.h"
 #include "Sinsweep.h"
 
+#define ENDLESS_LOOP true
+
 #define CUBESCENE_X_RES 320
 #define CUBESCENE_Y_RES 256
 
@@ -31,7 +33,7 @@
 #define VERT_DISTANCE_BETWEEN_CUBES 12
 #define CS (8 / 2) // half because all points are offset from the cube center by this value
 
-const char *scrollText = "    ACTIVATE GEOMETRY TRANSFORMATION ENGINE! ";
+const char *scrollText = "    DESIRE - REVISION 2019 ";
 //const char *scrollText = "    TEST! ";
 int scrollTextLetterIndex = 0;
 int scrollTextPixelIndex = 0;
@@ -610,7 +612,9 @@ void doCubes()
 		if(scrollTrigger == NUM_FRAMES_BETWEEN_ADVANCE_SCROLL){ 
 		
 			if( advanceScrollText() ){
+				#ifndef ENDLESS_LOOP
 				startFadingOut = 1; // Set begin fadeout flag
+				#endif
 			}
 			
 			scrollTrigger = 0;
@@ -626,9 +630,11 @@ void doCubes()
 			}
 			
 			// If done fading out, set done flag
+			#ifndef ENDLESS_LOOP
 			if( numColoredColumns==0 && startFadingOut>0){
 				isDone = 1;
 			}
+			#endif
 		
 		}	
 		

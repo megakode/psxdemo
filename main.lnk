@@ -1,0 +1,16 @@
+
+	
+	-O -Xo$80010000 -Xm
+	main.obj
+	dsrlib.obj
+#    cubeasm.obj
+	land.obj
+	stars.obj
+	picture.obj
+	model.obj
+#	cubesc.obj
+#	hitmod.obj
+
+	-omain.cpe,main.sym,main.map
+
+ 

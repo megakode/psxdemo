@@ -1,0 +1,30 @@
+version 1.5
+
+Just a minor update this time:
+  - fixed some bugs in modconv.exe, now it doesn't crash all the time and
+    a few mods that didn't get converted properly are now ok.
+  - added some pointers you can use in your programs to access internal
+    variables of the player. Use these if you want to sync your demo to
+    the music: (look in hitmod.h for more details)
+
+         MOD_CurrentOrder, MOD_CurrentPattern and MOD_CurrentRow point
+         to the current order, pattern and row being played.
+          
+         MOD_Volume, MOD_Freq and MOD_LastSample are arrays (one entry
+         for each channel of the mod) that contain the current sample
+         volume, current frequency (the amiga period value) and the last
+         sample played on that channel.
+
+  - added a '-m' switch to modconv.exe, which allows you to specify a
+    minimum length for looped samples. Any looped samples which are
+    shorter than this will have their looped part repeated multiple
+    times until the length passes the specified minimum value. This
+    doesn't help all the time, but it usually makes quite a good 
+    improvement (just compare the included 4mat.mod with no -m switch
+    and with -m 4000 for example). You may have to experiment with
+    different minimum lengths for each individual mod to get the best
+    results.
+
+  - as usual, versions for GCC and anyone who happens to be using the
+    16bit Psy-Q compiler are provided. Again the 16bit version had to
+    be compiled slightly less optimised, but its probably not noticeable.

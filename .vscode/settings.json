@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "font.h": "c",
+        "dsrlib.h": "c",
+        "MAIN.C": "cpp",
+        "LAND.C": "cpp"
+    }
+}
