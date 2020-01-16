@@ -20,6 +20,16 @@ typedef struct {
 	POLY_G4	*poly4s;	/* mesh cell */
 } DB;
 
+typedef struct {
+	VECTOR *position;
+	SVECTOR *rotation;
+	CVECTOR *materials;
+	SVECTOR *vertices;
+	SVECTOR *normals;
+	short *polys; // format: vi(0), vi(1), vi(2), materialIndex (vi = Vertex Index = normal index)
+	int polyCount; // Number of polygons
+} Model;
+
 DB	db[2];		/* double buffer */
 DB	*cdb;		/* current double buffer */
 u_long	*ot;	/* current OT */
@@ -45,6 +55,77 @@ static const SVECTOR lightDirVec = {0,3000,0};
 				   4096,0,0, 
 				   0,0,0};
 
+void drawPolys( Model *model , POLY_G3 *dstPrimitive, MATRIX *worldMatrix)
+{
+	int i;
+	SVECTOR pos;
+	MATRIX m = {ONE,0,0,
+				0,ONE,0,
+				0,0,ONE,
+				0,0,0};
+	VECTOR worldPos = { 0,0,0,0 };
+	VECTOR worldRot = { 0,0,0,0 };
+	MATRIX modelmatrix;
+	MATRIX ls;
+	//PushMatrix();
+
+	RotMatrixZYX(model->rotation, &modelmatrix); // Calculate rotation matrix from vector
+	TransMatrix(&modelmatrix,model->position);
+
+	/* make local-screen coordinate */
+	CompMatrix(worldMatrix, &modelmatrix, &ls);
+
+	/* set matrix*/
+	SetRotMatrix(&ls);		
+	SetTransMatrix(&ls);
+
+	//printf("model->rot = %d,%d,%d modelmatrix=%d,%d,%d mout=%d,%d,%d \n", model->rotation[0], model->rotation[1], model->rotation[2],
+	//printf("m = %d,%d,%d worldMatrix=%d,%d,%d mout=%d,%d,%d \n", m.t[0],m.t[1],m.t[2] ,worldMatrix->t[0],worldMatrix->t[1],worldMatrix->t[2],mout.t[0],mout.t[1],mout.t[2]);
+
+
+	for( i = 0 ; i < model->polyCount ; i++ )
+	{
+			short *vi;
+			POLY_G3 *poly;
+			int isomote = 0;
+			long	p, otz, opz, flg;
+
+			poly = dstPrimitive+i;
+			vi = &model->polys[i*4]; // model Input. *4 because there are 4 shorts for each poly: vi1,vi2,vi3,material
+			
+			isomote = RotAverageNclip3(&model->vertices[*(vi)], &model->vertices[*(vi+1)], &model->vertices[*(vi+2)],
+			(long *)&poly->x0, (long *)&poly->x1,(long *)&poly->x2,
+			&p,&otz,&flg);
+
+			if (isomote <= 0) continue;
+			if (otz >= 0 && otz < OTSIZE) 
+			{
+				CVECTOR color1,color2,color3;
+				CVECTOR *colorIn = &model->materials[*(vi+3)];
+				
+				// NormalColorCol destroys the .code on poly, so set it manually afterwards.
+				// The code for POLY_G3 is 0x30. 
+				// From libgpu.h:
+				// setPolyG3(p)	setlen(p, 6),  setcode(p, 0x30)
+	
+				NormalColorCol(&model->normals[*(vi)], colorIn, (CVECTOR*)&poly->r0);
+				NormalColorCol(&model->normals[*(vi+1)], colorIn, (CVECTOR*)&poly->r1);
+				NormalColorCol(&model->normals[*(vi+2)], colorIn, (CVECTOR*)&poly->r2);
+				poly->code = 0x30;
+	
+				addPrim(cdb->ot+otz, poly);
+	
+			} else {
+				printf("otz=%d",otz);
+			
+			}
+			
+		}
+
+		//PopMatrix();
+	
+}
+
 int doModel()
 {
 	const static int screenWidth = 320;
@@ -52,9 +133,28 @@ int doModel()
 	
 	VECTOR posVec = { 0,0,1000,0 };
 	SVECTOR rotVec = { 1,0,0,0 };
+	Model modelBody = { &body_pos, &body_rot, body_materials ,body_vertices , body_normals, body_polys, body_poly_count};
+	Model modelArmLeft = { &arm_left_pos, &arm_left_rot, arm_left_materials , arm_left_vertices , arm_left_normals, arm_left_polys, arm_left_poly_count};
+	Model modelArmRight = { &arm_right_pos, &arm_right_rot, arm_right_materials , arm_right_vertices , arm_right_normals, arm_right_polys, arm_right_poly_count};
+	Model modelBall = { &ball_pos, &ball_rot, ball_materials ,ball_vertices , ball_normals, ball_polys, ball_poly_count};
+	Model models[4] = { modelBall, modelBody,modelArmLeft ,modelArmRight };
+	int numModels = 4;
+
 	int frames = 0;
 	int numPoly4s = 0;
-	int numPoly3s = body_poly_count + arm_left_poly_count + arm_right_poly_count;
+	int numPoly3s = 0;
+
+	{
+		int i;
+		int totalPolyCount = 0;
+		for( i = 0 ; i < numModels ; i++)
+		{
+			totalPolyCount += models[i].polyCount;
+		}
+		numPoly3s = totalPolyCount;
+	}
+
+	
 	
 	InitGeom();
 	
@@ -134,26 +234,24 @@ int doModel()
 		
 		MATRIX m;
 		MATRIX inverseLightMatrix;
-		POLY_G4 *poly;
+		POLY_G3 *currentDstPoly;
 		u_long pad;
 		
 		cdb = (cdb==db)? db+1: db;	/* swap double buffer ID */	
 		ClearOTagR(cdb->ot, OTSIZE);	/* clear ordering table */
 		
-		// TODO: Clean this shit up. Just experimenting with rotation and scaling.
-		//rotVec.vx += 10;
-		//rotVec.vy += 10;
-		//rotVec.vz += 10;
-		
 		pad = PadRead(0);
 		
-		if (pad & PADLup)	rotVec.vz += 10;
-		if (pad & PADLdown)	rotVec.vz -= 10;
+		if (pad & PADLup)	posVec.vz += 10;
+		if (pad & PADLdown)	posVec.vz -= 10;
+		
 		if (pad & PADLleft)	rotVec.vy += 10;
 		if (pad & PADLright)rotVec.vy -= 10;
 		if (pad & PADRup)	rotVec.vz += 10;
 		if (pad & PADRdown)	rotVec.vz -= 10;
 		
+		ball_rot.vy+=10;
+
 		RotMatrix_gte(&rotVec, &m); // Calculate rotation matrix from vector
 		
 		TransposeMatrix(&m, &inverseLightMatrix);
@@ -161,10 +259,10 @@ int doModel()
 		TransMatrix(&m,&posVec);
 		
 		// Create a rotation matrix for the light, with the negated rotation from the cube.
-		TransposeMatrix(&m, &inverseLightMatrix);
+		//TransposeMatrix(&m, &inverseLightMatrix);
 		ApplyMatrixSV(&inverseLightMatrix,(SVECTOR*)&lightDirVec,(SVECTOR*)&llm);
 		
-		ScaleMatrix(&m, &Scale);
+		//ScaleMatrix(&m, &Scale);
 		
 		SetTransMatrix(&m);
 		SetRotMatrix(&m);	
@@ -219,47 +317,30 @@ int doModel()
 */
 		
 		// add Poly 3s
-		
-		for( i = 0 ; i < numPoly3s ; i++ )
+
+		currentDstPoly = cdb->poly3s;
+
+
 		{
-			short *vi;
-			POLY_G3 *poly;
-			int isomote = 0;
-			long	p, otz, opz, flg;
-
-			poly = cdb->poly3s+i;
-			vi = &body_polys[i*4]; // model Input. *4 because there are 4 shorts for each poly: vi1,vi2,vi3,material
-			
-			isomote = RotAverageNclip3(&body_vertices[*(vi)], &body_vertices[*(vi+1)], &body_vertices[*(vi+2)],
-			(long *)&poly->x0, (long *)&poly->x1,(long *)&poly->x2,
-			&p,&otz,&flg);
-
-			if (isomote <= 0) continue;
-			if (otz >= 0 && otz < OTSIZE) 
-			{
-				CVECTOR color1,color2,color3;
-				CVECTOR *colorIn = &materials[*(vi+3)];
-				
-				// NormalColorCol destroys the .code on poly, so set it manually afterwards.
-				// The code for POLY_G3 is 0x30. 
-				// From libgpu.h:
-				// setPolyG3(p)	setlen(p, 6),  setcode(p, 0x30)
-	
-				NormalColorCol(&body_normals[*(vi)], colorIn, (CVECTOR*)&poly->r0);
-				NormalColorCol(&body_normals[*(vi+1)], colorIn, (CVECTOR*)&poly->r1);
-				NormalColorCol(&body_normals[*(vi+2)], colorIn, (CVECTOR*)&poly->r2);
-				poly->code = 0x30;
-	
-				addPrim(cdb->ot+otz, poly);
-	
-			} else {
-				printf("otz=%d",otz);
-			
+			int mi = 0;
+			for(mi = 0 ; mi < numModels ; mi++ ){
+				drawPolys(&models[mi], currentDstPoly , &m );
+				currentDstPoly += models[mi].polyCount;
 			}
-			
 		}
-	
 
+		//drawPolys(&models[3],currentDstPoly, &m);
+		//currentDstPoly += models[2].polyCount;
+/*
+		drawPolys(&models[0], currentDstPoly , &m );
+		currentDstPoly += models[0].polyCount;
+		
+		drawPolys(&models[1], currentDstPoly, &m);
+		currentDstPoly += models[1].polyCount;
+		
+		drawPolys(&models[2],currentDstPoly, &m);
+		currentDstPoly += models[2].polyCount;
+*/
 		DrawSync(0);
 		VSync(0);
 
