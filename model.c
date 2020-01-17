@@ -30,6 +30,14 @@ typedef struct {
 	int polyCount; // Number of polygons
 } Model;
 
+typedef struct {
+	Model *model;
+	VECTOR *position_animation;
+	SVECTOR *rotation_animation;
+	int numberOfFrames;
+	int currentFrame;
+} Animation;
+
 DB	db[2];		/* double buffer */
 DB	*cdb;		/* current double buffer */
 u_long	*ot;	/* current OT */
@@ -126,18 +134,43 @@ void drawPolys( Model *model , POLY_G3 *dstPrimitive, MATRIX *worldMatrix)
 	
 }
 
+void updateAnimation(Animation *animation)
+{
+	if(animation->currentFrame >= animation->numberOfFrames )
+	{
+		animation->currentFrame = 0;
+	}
+
+	animation->model->position = animation->position_animation + animation->currentFrame;
+	animation->model->rotation = animation->rotation_animation + animation->currentFrame;
+
+	animation->currentFrame+=1;
+}
+
 int doModel()
 {
 	const static int screenWidth = 320;
 	const static int screenHeight = 256;
 	
-	VECTOR posVec = { 0,0,1000,0 };
+	VECTOR posVec = { 0,100,1000,0 };
 	SVECTOR rotVec = { 1,0,0,0 };
-	Model modelBody = { &body_pos, &body_rot, body_materials ,body_vertices , body_normals, body_polys, body_poly_count};
-	Model modelArmLeft = { &arm_left_pos, &arm_left_rot, arm_left_materials , arm_left_vertices , arm_left_normals, arm_left_polys, arm_left_poly_count};
-	Model modelArmRight = { &arm_right_pos, &arm_right_rot, arm_right_materials , arm_right_vertices , arm_right_normals, arm_right_polys, arm_right_poly_count};
-	Model modelBall = { &ball_pos, &ball_rot, ball_materials ,ball_vertices , ball_normals, ball_polys, ball_poly_count};
-	Model models[4] = { modelBall, modelBody,modelArmLeft ,modelArmRight };
+	
+	Model modelBody = { body_pos_anim, body_rot_anim, body_materials ,body_vertices , body_normals, body_polys, body_poly_count};
+	Model modelArmLeft = { arm_left_pos_anim, arm_left_rot_anim, arm_left_materials , arm_left_vertices , arm_left_normals, arm_left_polys, arm_left_poly_count};
+	Model modelArmRight = { arm_right_pos_anim, arm_right_rot_anim, arm_right_materials , arm_right_vertices , arm_right_normals, arm_right_polys, arm_right_poly_count};
+	Model modelBall = { ball_pos_anim, ball_rot_anim, ball_materials ,ball_vertices , ball_normals, ball_polys, ball_poly_count};
+	Model* models[] = { &modelBall, &modelBody,&modelArmLeft ,&modelArmRight };
+	
+	Animation leftArmAnimation = { &modelArmLeft, arm_left_pos_anim, arm_left_rot_anim, arm_left_pos_anim_count, 0 };
+	Animation rightArmAnimation = { &modelArmRight, arm_right_pos_anim, arm_right_rot_anim, arm_right_pos_anim_count, 0 };
+
+	/*
+	Model *model;
+	VECTOR *position_animation;
+	VECTOR *rotation_animation;
+	int numberOfFrames;
+	int currentFrame;
+	*/
 	int numModels = 4;
 
 	int frames = 0;
@@ -149,7 +182,7 @@ int doModel()
 		int totalPolyCount = 0;
 		for( i = 0 ; i < numModels ; i++)
 		{
-			totalPolyCount += models[i].polyCount;
+			totalPolyCount += models[i]->polyCount;
 		}
 		numPoly3s = totalPolyCount;
 	}
@@ -250,7 +283,12 @@ int doModel()
 		if (pad & PADRup)	rotVec.vz += 10;
 		if (pad & PADRdown)	rotVec.vz -= 10;
 		
-		ball_rot.vy+=10;
+		//ball_rot.vy+=10;
+
+		modelBall.rotation->vy += 10;
+		// update animation
+		updateAnimation(&leftArmAnimation);
+		updateAnimation(&rightArmAnimation);
 
 		RotMatrix_gte(&rotVec, &m); // Calculate rotation matrix from vector
 		
@@ -324,8 +362,8 @@ int doModel()
 		{
 			int mi = 0;
 			for(mi = 0 ; mi < numModels ; mi++ ){
-				drawPolys(&models[mi], currentDstPoly , &m );
-				currentDstPoly += models[mi].polyCount;
+				drawPolys(models[mi], currentDstPoly , &m );
+				currentDstPoly += models[mi]->polyCount;
 			}
 		}
 
