@@ -1,3 +1,27 @@
+/*
+ Tip on how to do dynamic light using precalculated dot products:
+
+sbeam: what do you do with normals in your vertex animation system?
+
+XL2: vertex normal, which is in fact a precomputed dotproduct table, giving me realtime lighting for nearly free
+The normals are in fact only an index (uint8) to a table of 32x168 dot product results. 
+The 32 being 32 possible rotations and 168 simply being the number of normals I have (just use a sphere in Blender and have fewer than 256 vertices. It should give you 168 vertices)
+So when I have a realtime light, I just need to update the distance and direction from the light to the model, 
+add it to my model's rotation and shift it right to limit my amount of possible results to 32.  
+Then it's just a matter of setting your index pointer (the 32x168 array) to the right place. And voilà ! Nearly free real time light for every single entity, even the flying body parts.
+
+sbeam: aaah... and by rotations, you mean only around one axis? the y axis i.e.
+
+XL2: Yeah, since enemy models only rotate on the y axis. You could support more axis with a more complex lookup table.
+
+sbeam: do you have a fast way of looking up the distance/direction then?
+XL2: You only do it for the whole model instead of per vertex, so only once per model. If your model has say 200 vertices, instead of rotating 200 normals and doing 200 dotproducts, you just use a quick look up table
+XL2: And if the dynamic light is too far, you can ignore it and just use the static light value, which you could simply get from the floor under you and add your rotation value to add some variety when you move around
+
+
+sbeam: so something like dotLookup[ normalindex ][ ratan2(lightx - objx, lighty-objy) >> 5 ]
+*/
+
 #include <sys/types.h>
 #include <libetc.h>
 #include <libgte.h>
@@ -154,16 +178,29 @@ int doModel()
 	
 	VECTOR posVec = { 0,100,1000,0 };
 	SVECTOR rotVec = { 1,0,0,0 };
-	
+	/*
 	Model modelBody = { body_pos_anim, body_rot_anim, body_materials ,body_vertices , body_normals, body_polys, body_poly_count};
 	Model modelArmLeft = { arm_left_pos_anim, arm_left_rot_anim, arm_left_materials , arm_left_vertices , arm_left_normals, arm_left_polys, arm_left_poly_count};
 	Model modelArmRight = { arm_right_pos_anim, arm_right_rot_anim, arm_right_materials , arm_right_vertices , arm_right_normals, arm_right_polys, arm_right_poly_count};
 	Model modelBall = { ball_pos_anim, ball_rot_anim, ball_materials ,ball_vertices , ball_normals, ball_polys, ball_poly_count};
 	Model* models[] = { &modelBall, &modelBody,&modelArmLeft ,&modelArmRight };
-	
+	*/
+int numModels = 1;
+VECTOR bodyposition = {0,0,0,0};
+SVECTOR bodyrotation = {0,0,0,0};
+Model modelBody = { &bodyposition, &bodyrotation, body_materials ,object_vertices , object_normals, object_polys, object_poly_count};
+Model* models[] = { &modelBody };
+/*	object_vertices 
+	object_normals
+	object_polys
+	object_poly_count
+	object_pos_anim_count
+	object_pos_anim
+	object_rot_anim*/
+	/*
 	Animation leftArmAnimation = { &modelArmLeft, arm_left_pos_anim, arm_left_rot_anim, arm_left_pos_anim_count, 0 };
 	Animation rightArmAnimation = { &modelArmRight, arm_right_pos_anim, arm_right_rot_anim, arm_right_pos_anim_count, 0 };
-
+*/
 	/*
 	Model *model;
 	VECTOR *position_animation;
@@ -171,7 +208,7 @@ int doModel()
 	int numberOfFrames;
 	int currentFrame;
 	*/
-	int numModels = 4;
+	
 
 	int frames = 0;
 	int numPoly4s = 0;
@@ -285,10 +322,10 @@ int doModel()
 		
 		//ball_rot.vy+=10;
 
-		modelBall.rotation->vy += 10;
+		//modelBall.rotation->vy += 10;
 		// update animation
-		updateAnimation(&leftArmAnimation);
-		updateAnimation(&rightArmAnimation);
+		//updateAnimation(&leftArmAnimation);
+		//updateAnimation(&rightArmAnimation);
 
 		RotMatrix_gte(&rotVec, &m); // Calculate rotation matrix from vector
 		
