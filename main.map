@@ -2,10 +2,10 @@
     Start     Stop   Length      Obj Group            Section name
  80010000 80025F13 00015F14 80010000 text             .rdata
  80025F14 8003477B 0000E868 80025F14 text             .text
- 8003477C 80066B37 000323BC 8003477C text             .data
- 80066B38 80066C37 00000100 80066B38 text             .sdata
- 80066C38 80066C7F 00000048 80066C38 bss              .sbss
- 80066C80 800793C7 00012748 80066C80 bss              .bss
+ 8003477C 80064B1F 000303A4 8003477C text             .data
+ 80064B20 80064C1F 00000100 80064B20 text             .sdata
+ 80064C20 80064C67 00000048 80064C20 bss              .sbss
+ 80064C68 800773AF 00012748 80064C68 bss              .bss
 
 Program entry point : 00000000
 
@@ -43,10 +43,10 @@ Program entry point : 00000000
  8002C0CC  FntLoad
  8002C16C  FntOpen
  8002C740  FntPrint
- 800649BC  Font
- 8006559C  GEnv
+ 800629A4  Font
+ 80063584  GEnv
  800330CC  GPU_cw
- 80065598  GPU_printf
+ 80063580  GPU_printf
  8002FD1C  GetClut
  8002DBB0  GetDispEnv
  8002D684  GetDrawEnv
@@ -56,7 +56,7 @@ Program entry point : 00000000
  80033278  GetRCnt
  8002FCDC  GetTPage
  800330A0  GetVideoMode
- 8006593C  Hcount
+ 80063924  Hcount
  8003318C  HookEntryInt
  8002B1E4  InitGeom
  800339CC  InitHeap
@@ -70,24 +70,24 @@ Program entry point : 00000000
  8002D134  LoadImage
  8002F5A4  LoadImage2
  8002FA0C  LoadTPage
- 8006007C  MODPeriodTable
- 8006005C  MODSineTable
+ 8005E064  MODPeriodTable
+ 8005E044  MODSineTable
  80029740  MOD_Check
- 80066C20  MOD_CurrentOrder
- 80066C18  MOD_CurrentPattern
- 80066C1C  MOD_CurrentRow
+ 80064C08  MOD_CurrentOrder
+ 80064C00  MOD_CurrentPattern
+ 80064C04  MOD_CurrentRow
  800298BC  MOD_Free
- 80066C28  MOD_Freq
+ 80064C10  MOD_Freq
  80029938  MOD_Init
- 80066C2C  MOD_LastSample
+ 80064C14  MOD_LastSample
  800299C0  MOD_Load
  80029EEC  MOD_Poll
  800297D4  MOD_Start
  80029868  MOD_Stop
  8002A704  MOD_UpdateEffect
  80029FB0  MOD_UpdateRow
- 80066C24  MOD_Volume
- 800735E0  MODspu_malloc_rec
+ 80064C0C  MOD_Volume
+ 800715C8  MODspu_malloc_rec
  8002B42C  MatrixNormal
  8002D1F4  MoveImage
  8002F77C  MoveImage2
@@ -98,7 +98,7 @@ Program entry point : 00000000
  8003315C  PAD_dr
  80033368  PAD_init
  800335FC  PAD_init2
- 80079390  PadIdentifier
+ 80077378  PadIdentifier
  8003237C  PadInit
  800323C8  PadRead
  8002B720  PopMatrix
@@ -117,7 +117,7 @@ Program entry point : 00000000
  8002BA7C  RotMatrixZYX
  8002BD0C  RotMatrix_gte
  8002B97C  RotTransPers
- 8005F764  Scale
+ 8005D74C  Scale
  8002B90C  SetBackColor
  8002B8BC  SetColorMatrix
  8002BFFC  SetDQA
@@ -179,7 +179,7 @@ Program entry point : 00000000
  800323FC  VSync
  8003269C  VSyncCallback
  800326D0  VSyncCallbacks
- 80066A6C  Vcount
+ 80064A54  Vcount
  8002B30C  VectorNormal
  8002B2F8  VectorNormalS
  8002B33C  VectorNormalSS
@@ -188,28 +188,28 @@ Program entry point : 00000000
  80030DBC  _SpuDataCallback
  8003011C  _SpuInit
  8003384C  __SN_ENTRY_POINT
- 80066B38  __SN_GP_BASE
+ 80064B20  __SN_GP_BASE
  80033A8C  __adddf3
  80033EBC  __addsf3
- 80066B18  __bss
- 80066C80  __bss_obj
- 800793C0  __bss_objend
- 80066C80  __bss_org
- 800793C0  __bss_orgend
+ 80064B00  __bss
+ 80064C68  __bss_obj
+ 800773A8  __bss_objend
+ 80064C68  __bss_org
+ 800773A8  __bss_orgend
  00012740  __bss_size
- 80066B1C  __bsslen
+ 80064B04  __bsslen
  8003477C  __ctors_obj
  8003477C  __ctors_objend
  8003477C  __ctors_org
  8003477C  __ctors_orgend
  00000000  __ctors_size
- 80066B10  __data
+ 80064AF8  __data
  8003477C  __data_obj
- 80066B35  __data_objend
+ 80064B1D  __data_objend
  8003477C  __data_org
- 80066B35  __data_orgend
- 000323B9  __data_size
- 80066B14  __datalen
+ 80064B1D  __data_orgend
+ 000303A1  __data_size
+ 80064AFC  __datalen
  8003412C  __divsf3
  80033964  __do_global_dtors
  8003477C  __dtors_obj
@@ -220,8 +220,8 @@ Program entry point : 00000000
  8003427C  __fixsfsi
  8003432C  __floatsisf
  800343FC  __gedf2
- 80066B00  __heapbase
- 80066B04  __heapsize
+ 80064AE8  __heapbase
+ 80064AEC  __heapsize
  800338F4  __main
  8003454C  __mulsf3
  800346EC  __negsf2
@@ -230,45 +230,45 @@ Program entry point : 00000000
  80010000  __rdata_org
  80025F0B  __rdata_orgend
  00015F0B  __rdata_size
- 80066C38  __sbss_obj
- 80066C6C  __sbss_objend
- 80066C38  __sbss_org
- 80066C6C  __sbss_orgend
+ 80064C20  __sbss_obj
+ 80064C54  __sbss_objend
+ 80064C20  __sbss_org
+ 80064C54  __sbss_orgend
  00000034  __sbss_size
- 80066B38  __sdata_obj
- 80066C37  __sdata_objend
- 80066B38  __sdata_org
- 80066C37  __sdata_orgend
+ 80064B20  __sdata_obj
+ 80064C1F  __sdata_objend
+ 80064B20  __sdata_org
+ 80064C1F  __sdata_orgend
  000000FF  __sdata_size
  8003468C  __subsf3
- 80066B08  __text
+ 80064AF0  __text
  80025F14  __text_obj
  8003477C  __text_objend
  80025F14  __text_org
  8003477C  __text_orgend
  0000E868  __text_size
- 80066B0C  __textlen
+ 80064AF4  __textlen
  80033E0C  _add_mant_d
- 80079398  _apiPadPatch
- 80066C38  _bss_obj
- 800793C8  _bss_objend
- 80066C38  _bss_org
- 800793C8  _bss_orgend
+ 80077380  _apiPadPatch
+ 80064C20  _bss_obj
+ 800773B0  _bss_objend
+ 80064C20  _bss_org
+ 800773B0  _bss_orgend
  00012790  _bss_size
  8003406C  _dbl_shift
  8003470C  _err_math
- 80066AEC  _freep
+ 80064AD4  _freep
  800344DC  _mainasu
  8002BF1C  _patch_gte
  80033654  _patch_pad
- 800656C4  _qin
- 800656C8  _qout
- 80077B58  _que
- 80066B24  _ramsize
+ 800636AC  _qin
+ 800636B0  _qout
+ 80075B40  _que
+ 80064B0C  _ramsize
  800336CC  _remove_ChgclrPAD
- 800657CC  _spu_AllocBlockNum
- 800657D0  _spu_AllocLastNum
- 800656F4  _spu_EVdma
+ 800637B4  _spu_AllocBlockNum
+ 800637B8  _spu_AllocLastNum
+ 800636DC  _spu_EVdma
  80030C70  _spu_FgetRXXa
  800306BC  _spu_FiDMA
  80030B24  _spu_Fr
@@ -278,58 +278,58 @@ Program entry point : 00000000
  80030BCC  _spu_FsetRXXa
  80030AA0  _spu_Fw
  80030D54  _spu_Fw1ts
- 800657A8  _spu_IRQCallback
- 80079368  _spu_RQ
- 80065724  _spu_RQmask
- 80065720  _spu_RQvoice
- 8006576C  _spu_RXX
- 8006578C  _spu_addrMode
- 80065758  _spu_env
+ 80063790  _spu_IRQCallback
+ 80077350  _spu_RQ
+ 8006370C  _spu_RQmask
+ 80063708  _spu_RQvoice
+ 80063754  _spu_RXX
+ 80063774  _spu_addrMode
+ 80063740  _spu_env
  8003111C  _spu_gcSPU
- 800657A0  _spu_inTransfer
+ 80063788  _spu_inTransfer
  8003027C  _spu_init
- 8006575C  _spu_isCalled
- 800656F8  _spu_keystat
- 800657D4  _spu_memList
- 80065790  _spu_mem_mode
- 80065794  _spu_mem_mode_plus
- 80065798  _spu_mem_mode_unit
- 8006579C  _spu_mem_mode_unitM
+ 80063744  _spu_isCalled
+ 800636E0  _spu_keystat
+ 800637BC  _spu_memList
+ 80063778  _spu_mem_mode
+ 8006377C  _spu_mem_mode_plus
+ 80063780  _spu_mem_mode_unit
+ 80063784  _spu_mem_mode_unitM
  80031DFC  _spu_note2pitch
  80031ECC  _spu_pitch2note
- 8006570C  _spu_rev_attr
- 80065700  _spu_rev_flag
- 80065708  _spu_rev_offsetaddr
- 80065704  _spu_rev_reserve_wa
- 800658FC  _spu_rev_startaddr
+ 800636F4  _spu_rev_attr
+ 800636E8  _spu_rev_flag
+ 800636F0  _spu_rev_offsetaddr
+ 800636EC  _spu_rev_reserve_wa
+ 800638E4  _spu_rev_startaddr
  80030820  _spu_t
- 80065788  _spu_transMode
- 800656FC  _spu_trans_mode
- 800657A4  _spu_transferCallback
- 80065784  _spu_tsa
- 80065728  _spu_voice_centerNote
- 80066B20  _stacksize
+ 80063770  _spu_transMode
+ 800636E4  _spu_trans_mode
+ 8006378C  _spu_transferCallback
+ 8006376C  _spu_tsa
+ 80063710  _spu_voice_centerNote
+ 80064B08  _stacksize
  80010000  _text_obj
- 80066C38  _text_objend
+ 80064C20  _text_objend
  80010000  _text_org
- 80066C38  _text_orgend
- 00056C38  _text_size
+ 80064C20  _text_orgend
+ 00054C20  _text_size
  80026AF8  addLandCell
  80026BD0  addLandPolys
  80028C54  advanceScrollText
  800274C0  calcNormal
- 80066C48  cdb
- 80068208  cellNormals
- 80066C50  cellShrinkAmount
- 80066E80  cells
- 80066B9C  colorSineIndex1
- 80066B9D  colorSineIndex2
- 80066B9E  colorSineIndex3
- 80072A08  cubeColors
- 80066C60  cubeSceneBuffers
- 80066C58  cubes
- 80066C68  currentCubeSceneBuffer
- 8006A918  db
+ 80064C30  cdb
+ 800661F0  cellNormals
+ 80064C38  cellShrinkAmount
+ 80064E68  cells
+ 80064B84  colorSineIndex1
+ 80064B85  colorSineIndex2
+ 80064B86  colorSineIndex3
+ 800709F0  cubeColors
+ 80064C48  cubeSceneBuffers
+ 80064C40  cubes
+ 80064C50  currentCubeSceneBuffer
+ 80068900  db
  80028D90  doCubes
  80026130  doFadeClut
  800270E8  doLandscape
@@ -345,44 +345,44 @@ Program entry point : 00000000
  800266A0  initLandscapePrimitives
  80028D88  initSineTables
  80051A00  landPosVec
- 80066B3C  landRotVec
- 8005F794  lcm
+ 80064B24  landRotVec
+ 8005D77C  lcm
  80026388  lin_inter
- 8005F774  llm
+ 8005D75C  llm
  80025FA0  loadTIM
  80025F14  main
  80033A5C  malloc
  8003379C  malloc3
- 80066B34  math_err_point
- 80066B30  math_errno
+ 80064B1C  math_err_point
+ 80064B18  math_errno
  80033A2C  memcpy
  80033A3C  memset
  80026844  moveLand
  8002694C  moveLandRows
  8002631C  noise2
  80026454  noise2d
- 80066C44  ot
+ 80064C2C  ot
  80010000  pal
  80026590  perlin2d
  80033A7C  printf
  800339E4  puts
  80033A4C  rand
- 800609BC  rcossin_tbl
- 80066B8C  scrollText
- 80066B90  scrollTextLetterIndex
- 80066B94  scrollTextPixelIndex
+ 8005E9A4  rcossin_tbl
+ 80064B74  scrollText
+ 80064B78  scrollTextLetterIndex
+ 80064B7C  scrollTextPixelIndex
  80026010  setLetter
  800339FC  setjmp
  800275C0  setupBuffer
- 80066B98  sinIndex
+ 80064B80  sinIndex
  800263D8  smooth_inter
- 80066C40  stars
+ 80064C28  stars
  80032DEC  startIntrDMA
  80032CCC  startIntrVSync
  80033A1C  strlen
  80033A0C  strncmp
  80026878  swing
- 80066B5C  textLineIndex
+ 80064B44  textLineIndex
  8005A670  textLines
  80029614  translateAndAddPoly
  800286F4  updateAnimation
@@ -398,8 +398,8 @@ Program entry point : 00000000
  00012740  __bss_size
  00012790  _bss_size
  00015F0B  __rdata_size
- 000323B9  __data_size
- 00056C38  _text_size
+ 000303A1  __data_size
+ 00054C20  _text_size
  80010000  pal
  80010000  _text_org
  80010000  _text_obj
@@ -660,109 +660,109 @@ Program entry point : 00000000
  8003477C  __ctors_obj
  80051A00  landPosVec
  8005A670  textLines
- 8005F764  Scale
- 8005F774  llm
- 8005F794  lcm
- 8006005C  MODSineTable
- 8006007C  MODPeriodTable
- 800609BC  rcossin_tbl
- 800649BC  Font
- 80065598  GPU_printf
- 8006559C  GEnv
- 800656C4  _qin
- 800656C8  _qout
- 800656F4  _spu_EVdma
- 800656F8  _spu_keystat
- 800656FC  _spu_trans_mode
- 80065700  _spu_rev_flag
- 80065704  _spu_rev_reserve_wa
- 80065708  _spu_rev_offsetaddr
- 8006570C  _spu_rev_attr
- 80065720  _spu_RQvoice
- 80065724  _spu_RQmask
- 80065728  _spu_voice_centerNote
- 80065758  _spu_env
- 8006575C  _spu_isCalled
- 8006576C  _spu_RXX
- 80065784  _spu_tsa
- 80065788  _spu_transMode
- 8006578C  _spu_addrMode
- 80065790  _spu_mem_mode
- 80065794  _spu_mem_mode_plus
- 80065798  _spu_mem_mode_unit
- 8006579C  _spu_mem_mode_unitM
- 800657A0  _spu_inTransfer
- 800657A4  _spu_transferCallback
- 800657A8  _spu_IRQCallback
- 800657CC  _spu_AllocBlockNum
- 800657D0  _spu_AllocLastNum
- 800657D4  _spu_memList
- 800658FC  _spu_rev_startaddr
- 8006593C  Hcount
- 80066A6C  Vcount
- 80066AEC  _freep
- 80066B00  __heapbase
- 80066B04  __heapsize
- 80066B08  __text
- 80066B0C  __textlen
- 80066B10  __data
- 80066B14  __datalen
- 80066B18  __bss
- 80066B1C  __bsslen
- 80066B20  _stacksize
- 80066B24  _ramsize
- 80066B30  math_errno
- 80066B34  math_err_point
- 80066B35  __data_orgend
- 80066B35  __data_objend
- 80066B38  __sdata_org
- 80066B38  __sdata_obj
- 80066B38  __SN_GP_BASE
- 80066B3C  landRotVec
- 80066B5C  textLineIndex
- 80066B8C  scrollText
- 80066B90  scrollTextLetterIndex
- 80066B94  scrollTextPixelIndex
- 80066B98  sinIndex
- 80066B9C  colorSineIndex1
- 80066B9D  colorSineIndex2
- 80066B9E  colorSineIndex3
- 80066C18  MOD_CurrentPattern
- 80066C1C  MOD_CurrentRow
- 80066C20  MOD_CurrentOrder
- 80066C24  MOD_Volume
- 80066C28  MOD_Freq
- 80066C2C  MOD_LastSample
- 80066C37  __sdata_orgend
- 80066C37  __sdata_objend
- 80066C38  _text_orgend
- 80066C38  _text_objend
- 80066C38  _bss_org
- 80066C38  _bss_obj
- 80066C38  __sbss_org
- 80066C38  __sbss_obj
- 80066C40  stars
- 80066C44  ot
- 80066C48  cdb
- 80066C50  cellShrinkAmount
- 80066C58  cubes
- 80066C60  cubeSceneBuffers
- 80066C68  currentCubeSceneBuffer
- 80066C6C  __sbss_orgend
- 80066C6C  __sbss_objend
- 80066C80  __bss_org
- 80066C80  __bss_obj
- 80066E80  cells
- 80068208  cellNormals
- 8006A918  db
- 80072A08  cubeColors
- 800735E0  MODspu_malloc_rec
- 80077B58  _que
- 80079368  _spu_RQ
- 80079390  PadIdentifier
- 80079398  _apiPadPatch
- 800793C0  __bss_orgend
- 800793C0  __bss_objend
- 800793C8  _bss_orgend
- 800793C8  _bss_objend
+ 8005D74C  Scale
+ 8005D75C  llm
+ 8005D77C  lcm
+ 8005E044  MODSineTable
+ 8005E064  MODPeriodTable
+ 8005E9A4  rcossin_tbl
+ 800629A4  Font
+ 80063580  GPU_printf
+ 80063584  GEnv
+ 800636AC  _qin
+ 800636B0  _qout
+ 800636DC  _spu_EVdma
+ 800636E0  _spu_keystat
+ 800636E4  _spu_trans_mode
+ 800636E8  _spu_rev_flag
+ 800636EC  _spu_rev_reserve_wa
+ 800636F0  _spu_rev_offsetaddr
+ 800636F4  _spu_rev_attr
+ 80063708  _spu_RQvoice
+ 8006370C  _spu_RQmask
+ 80063710  _spu_voice_centerNote
+ 80063740  _spu_env
+ 80063744  _spu_isCalled
+ 80063754  _spu_RXX
+ 8006376C  _spu_tsa
+ 80063770  _spu_transMode
+ 80063774  _spu_addrMode
+ 80063778  _spu_mem_mode
+ 8006377C  _spu_mem_mode_plus
+ 80063780  _spu_mem_mode_unit
+ 80063784  _spu_mem_mode_unitM
+ 80063788  _spu_inTransfer
+ 8006378C  _spu_transferCallback
+ 80063790  _spu_IRQCallback
+ 800637B4  _spu_AllocBlockNum
+ 800637B8  _spu_AllocLastNum
+ 800637BC  _spu_memList
+ 800638E4  _spu_rev_startaddr
+ 80063924  Hcount
+ 80064A54  Vcount
+ 80064AD4  _freep
+ 80064AE8  __heapbase
+ 80064AEC  __heapsize
+ 80064AF0  __text
+ 80064AF4  __textlen
+ 80064AF8  __data
+ 80064AFC  __datalen
+ 80064B00  __bss
+ 80064B04  __bsslen
+ 80064B08  _stacksize
+ 80064B0C  _ramsize
+ 80064B18  math_errno
+ 80064B1C  math_err_point
+ 80064B1D  __data_orgend
+ 80064B1D  __data_objend
+ 80064B20  __sdata_org
+ 80064B20  __sdata_obj
+ 80064B20  __SN_GP_BASE
+ 80064B24  landRotVec
+ 80064B44  textLineIndex
+ 80064B74  scrollText
+ 80064B78  scrollTextLetterIndex
+ 80064B7C  scrollTextPixelIndex
+ 80064B80  sinIndex
+ 80064B84  colorSineIndex1
+ 80064B85  colorSineIndex2
+ 80064B86  colorSineIndex3
+ 80064C00  MOD_CurrentPattern
+ 80064C04  MOD_CurrentRow
+ 80064C08  MOD_CurrentOrder
+ 80064C0C  MOD_Volume
+ 80064C10  MOD_Freq
+ 80064C14  MOD_LastSample
+ 80064C1F  __sdata_orgend
+ 80064C1F  __sdata_objend
+ 80064C20  _text_orgend
+ 80064C20  _text_objend
+ 80064C20  _bss_org
+ 80064C20  _bss_obj
+ 80064C20  __sbss_org
+ 80064C20  __sbss_obj
+ 80064C28  stars
+ 80064C2C  ot
+ 80064C30  cdb
+ 80064C38  cellShrinkAmount
+ 80064C40  cubes
+ 80064C48  cubeSceneBuffers
+ 80064C50  currentCubeSceneBuffer
+ 80064C54  __sbss_orgend
+ 80064C54  __sbss_objend
+ 80064C68  __bss_org
+ 80064C68  __bss_obj
+ 80064E68  cells
+ 800661F0  cellNormals
+ 80068900  db
+ 800709F0  cubeColors
+ 800715C8  MODspu_malloc_rec
+ 80075B40  _que
+ 80077350  _spu_RQ
+ 80077378  PadIdentifier
+ 80077380  _apiPadPatch
+ 800773A8  __bss_orgend
+ 800773A8  __bss_objend
+ 800773B0  _bss_orgend
+ 800773B0  _bss_objend
 

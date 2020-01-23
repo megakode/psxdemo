@@ -188,7 +188,7 @@ int doModel()
 int numModels = 1;
 VECTOR bodyposition = {0,0,0,0};
 SVECTOR bodyrotation = {0,0,0,0};
-Model modelBody = { &bodyposition, &bodyrotation, body_materials ,object_vertices , object_normals, object_polys, object_poly_count};
+Model modelBody = { &bodyposition, &bodyrotation, crashbandicoot_materials ,object_vertices , object_normals, object_polys, object_poly_count};
 Model* models[] = { &modelBody };
 /*	object_vertices 
 	object_normals
