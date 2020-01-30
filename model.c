@@ -31,8 +31,10 @@ sbeam: so something like dotLookup[ normalindex ][ ratan2(lightx - objx, lighty-
 #include <Inline_c.h>
 #include <libgs.h>
 #include <libapi.h>
-#include "dsrlib.h" 	// Desire lib
-#include "ship.h"
+
+#include "dsrlib.h"	// Desire lib
+#include "crash.h"	// 3D model: Crash bandicoot
+#include "ball.h"	// 3D model: Amiga ball
 
 #define OTSIZE 4096
 
@@ -56,8 +58,8 @@ typedef struct {
 
 typedef struct {
 	Model *model;
-	VECTOR *position_animation;
-	SVECTOR *rotation_animation;
+	SVECTOR *vertices;
+	int numberOfVertices;
 	int numberOfFrames;
 	int currentFrame;
 } Animation;
@@ -160,14 +162,20 @@ void drawPolys( Model *model , POLY_G3 *dstPrimitive, MATRIX *worldMatrix)
 
 void updateAnimation(Animation *animation)
 {
+	/*
+	Model *model;
+	SVECTOR *vertices;
+	int numberOfVertices;
+	int numberOfFrames;
+	int currentFrame;
+} Animation;
+*/
 	if(animation->currentFrame >= animation->numberOfFrames )
 	{
 		animation->currentFrame = 0;
 	}
 
-	animation->model->position = animation->position_animation + animation->currentFrame;
-	animation->model->rotation = animation->rotation_animation + animation->currentFrame;
-
+	animation->model->vertices = animation->vertices + animation->currentFrame * animation->numberOfVertices;
 	animation->currentFrame+=1;
 }
 
@@ -175,40 +183,21 @@ int doModel()
 {
 	const static int screenWidth = 320;
 	const static int screenHeight = 256;
+	const static int BALL_RADIUS = 184;
 	
 	VECTOR posVec = { 0,100,1000,0 };
-	SVECTOR rotVec = { 1,0,0,0 };
-	/*
-	Model modelBody = { body_pos_anim, body_rot_anim, body_materials ,body_vertices , body_normals, body_polys, body_poly_count};
-	Model modelArmLeft = { arm_left_pos_anim, arm_left_rot_anim, arm_left_materials , arm_left_vertices , arm_left_normals, arm_left_polys, arm_left_poly_count};
-	Model modelArmRight = { arm_right_pos_anim, arm_right_rot_anim, arm_right_materials , arm_right_vertices , arm_right_normals, arm_right_polys, arm_right_poly_count};
-	Model modelBall = { ball_pos_anim, ball_rot_anim, ball_materials ,ball_vertices , ball_normals, ball_polys, ball_poly_count};
-	Model* models[] = { &modelBall, &modelBody,&modelArmLeft ,&modelArmRight };
-	*/
-int numModels = 1;
-VECTOR bodyposition = {0,0,0,0};
-SVECTOR bodyrotation = {0,0,0,0};
-Model modelBody = { &bodyposition, &bodyrotation, crashbandicoot_materials ,object_vertices , object_normals, object_polys, object_poly_count};
-Model* models[] = { &modelBody };
-/*	object_vertices 
-	object_normals
-	object_polys
-	object_poly_count
-	object_pos_anim_count
-	object_pos_anim
-	object_rot_anim*/
-	/*
-	Animation leftArmAnimation = { &modelArmLeft, arm_left_pos_anim, arm_left_rot_anim, arm_left_pos_anim_count, 0 };
-	Animation rightArmAnimation = { &modelArmRight, arm_right_pos_anim, arm_right_rot_anim, arm_right_pos_anim_count, 0 };
-*/
-	/*
-	Model *model;
-	VECTOR *position_animation;
-	VECTOR *rotation_animation;
-	int numberOfFrames;
-	int currentFrame;
-	*/
+	SVECTOR rotVec = { 0,0,0,0 };
 	
+	int numModels = 2;
+	int ballvelocity = -10;
+	VECTOR ballposition = {0,-BALL_RADIUS,300,0};
+	SVECTOR ballRotation = {0,0,0,0};
+	VECTOR bodyposition = {0,0,0,0};
+	SVECTOR bodyrotation = {0,0,0,0};
+	Model modelBody = { &bodyposition, &bodyrotation, crashbandicoot_materials ,crashbandicoot_vertices , crashbandicoot_normals, crashbandicoot_polys, crashbandicoot_poly_count};
+	Model modelBall = { &ballposition, &ballRotation, ball_materials ,ball_vertices , ball_normals, ball_polys, ball_poly_count};
+	Model* models[] = {  &modelBall, &modelBody };
+	Animation animation = { &modelBody, crashbandicoot_vertices, crashbandicoot_vertex_count, crashbandicoot_frame_count, 0 };
 
 	int frames = 0;
 	int numPoly4s = 0;
@@ -300,7 +289,7 @@ Model* models[] = { &modelBody };
 			
 	while(1)
 	{
-		int i = 0;
+		static int animationTrigger = 0;
 		
 		MATRIX m;
 		MATRIX inverseLightMatrix;
@@ -321,11 +310,23 @@ Model* models[] = { &modelBody };
 		if (pad & PADRdown)	rotVec.vz -= 10;
 		
 		//ball_rot.vy+=10;
+		modelBall.rotation->vx += 15;
+		modelBall.position->vy += ballvelocity;
+		
+		if(modelBall.position->vy >= -BALL_RADIUS){
+			ballvelocity = -17;
+		}
 
-		//modelBall.rotation->vy += 10;
+		ballvelocity+=1;
+
 		// update animation
-		//updateAnimation(&leftArmAnimation);
-		//updateAnimation(&rightArmAnimation);
+		animationTrigger += 1;
+		if(animationTrigger == 2)
+		{
+			updateAnimation(&animation);
+			animationTrigger = 0;
+		}
+		
 
 		RotMatrix_gte(&rotVec, &m); // Calculate rotation matrix from vector
 		
@@ -345,56 +346,9 @@ Model* models[] = { &modelBody };
 		SetColorMatrix(&lcm);
 		SetLightMatrix(&llm);
 		
-
-		// add primitives here
-		/*
-		for( i = 0 ; i < numPoly4s ; i++ )
-		{
-			short *vi;
-			
-			int isomote = 0;
-			long	p, otz, opz, flg;
-
-			poly = cdb->poly4s+i;
-			vi = &poly4arr[i*9]; // model Input. *8 because there are 8 shorts for each poly4: vi1,vi2,vi3,vi4,ni1,ni2,ni3,ni4
-
-			isomote = RotAverageNclip4(&vertices[*(vi)], &vertices[*(vi+1)], &vertices[*(vi+3)],&vertices[*(vi+2)],
-			(long *)&poly->x0, (long *)&poly->x1,(long *)&poly->x2,(long *)&poly->x3, 
-			&p,&otz,&flg);
-
-			if (isomote <= 0) continue;
-			if (otz >= 0 && otz < OTSIZE) 
-			{
-				CVECTOR color1,color2,color3,color4;
-				CVECTOR *colorIn = &materials[*(vi+8)];
-				
-				// Make colors for each of the 4 vertices
-				
-				// NormalColorCol destroys the .code on poly, so set it manually afterwards.
-				// The code for POLY_G4 is 0x38. 
-				// From libgpu.h:
-				// #define setPolyG4(p)	setlen(p, 8),  setcode(p, 0x38)
-				NormalColorCol(&normals[*(vi+4)], colorIn, (CVECTOR*)&poly->r0);
-				NormalColorCol(&normals[*(vi+5)], colorIn, (CVECTOR*)&poly->r1);
-				NormalColorCol(&normals[*(vi+7)], colorIn, (CVECTOR*)&poly->r2);
-				NormalColorCol(&normals[*(vi+6)], colorIn, (CVECTOR*)&poly->r3);
-				poly->code = 0x38;
-				
-				addPrim(cdb->ot+otz, poly);
-				//printf("%d,",otz);
-			}else {
-				printf("otz=%d",otz);
-			
-			}
-			
-			
-		}
-*/
-		
 		// add Poly 3s
 
 		currentDstPoly = cdb->poly3s;
-
 
 		{
 			int mi = 0;
@@ -404,18 +358,6 @@ Model* models[] = { &modelBody };
 			}
 		}
 
-		//drawPolys(&models[3],currentDstPoly, &m);
-		//currentDstPoly += models[2].polyCount;
-/*
-		drawPolys(&models[0], currentDstPoly , &m );
-		currentDstPoly += models[0].polyCount;
-		
-		drawPolys(&models[1], currentDstPoly, &m);
-		currentDstPoly += models[1].polyCount;
-		
-		drawPolys(&models[2],currentDstPoly, &m);
-		currentDstPoly += models[2].polyCount;
-*/
 		DrawSync(0);
 		VSync(0);
 
