@@ -34,6 +34,7 @@ sbeam: so something like dotLookup[ normalindex ][ ratan2(lightx - objx, lighty-
 
 #include "dsrlib.h"	// Desire lib
 #include "crash.h"	// 3D model: Crash bandicoot
+//#include "crash_jump.h"	// 3D model: Crash bandicoot
 #include "ball.h"	// 3D model: Amiga ball
 
 #define OTSIZE 4096
@@ -62,6 +63,29 @@ typedef struct {
 	int numberOfFrames;
 	int currentFrame;
 } Animation;
+
+typedef struct {
+	VECTOR position;
+	SVECTOR rotation;
+} CameraPreset;
+
+typedef struct {
+	const CameraPreset *from;
+	const CameraPreset *to;
+} CameraAnimationPreset;
+
+typedef struct {
+	VECTOR fromRot;	// From rotation vector
+	VECTOR fromPos;	// From position vector
+	VECTOR toPos;	// To position vector
+	VECTOR toRot;	// To rotation vector
+	VECTOR currentPos;	// Current position in the animation
+	VECTOR currentRot;	// Current rotation in the animation
+	VECTOR deltaPos; 	// The delta amount to add to currentPos for every animation step
+	VECTOR deltaRot;	// The delta amount to add to currentRot for every animation step
+	int currentStep;
+	int numTotalSteps;
+} CameraAnimation;
 
 DB	db[2];		/* double buffer */
 DB	*cdb;		/* current double buffer */
@@ -168,14 +192,7 @@ void drawPolys( Model *model , POLY_G3 *dstPrimitive, MATRIX *worldMatrix)
 
 void updateAnimation(Animation *animation)
 {
-	/*
-	Model *model;
-	SVECTOR *vertices;
-	int numberOfVertices;
-	int numberOfFrames;
-	int currentFrame;
-} Animation;
-*/
+
 	if(animation->currentFrame >= animation->numberOfFrames )
 	{
 		animation->currentFrame = 0;
@@ -185,15 +202,226 @@ void updateAnimation(Animation *animation)
 	animation->currentFrame+=1;
 }
 
+const int fixedPointDecimals = 0;
+
+/*
+ Create and set a world matrix based on a CameraAnimation
+*/
+void playCameraAnimation( const CameraAnimationPreset *preset , CameraAnimation *outputAnimation, int numberOfSteps)
+{
+	int deltaRotX,deltaRotY,deltaRotZ;
+
+	outputAnimation->numTotalSteps = numberOfSteps;
+	outputAnimation->currentStep = 0;
+
+	// Store from/to rotation and position, and convert them to fixed point, so we can make a smoother LERP with them
+
+	outputAnimation->fromRot.vx = preset->from->rotation.vx << fixedPointDecimals;
+	outputAnimation->fromRot.vy = preset->from->rotation.vy << fixedPointDecimals;
+	outputAnimation->fromRot.vz = preset->from->rotation.vz << fixedPointDecimals;
+	outputAnimation->toRot.vx = preset->to->rotation.vx << fixedPointDecimals;
+	outputAnimation->toRot.vy = preset->to->rotation.vy << fixedPointDecimals;
+	outputAnimation->toRot.vz = preset->to->rotation.vz << fixedPointDecimals;
+
+	outputAnimation->fromPos.vx = preset->from->position.vx << fixedPointDecimals;
+	outputAnimation->fromPos.vy = preset->from->position.vy << fixedPointDecimals;
+	outputAnimation->fromPos.vz = preset->from->position.vz << fixedPointDecimals;
+	outputAnimation->toPos.vx = preset->to->position.vx << fixedPointDecimals;
+	outputAnimation->toPos.vy = preset->to->position.vy << fixedPointDecimals;
+	outputAnimation->toPos.vz = preset->to->position.vz << fixedPointDecimals;
+
+	// Calculate position deltas
+
+	outputAnimation->deltaPos.vx = (outputAnimation->toPos.vx - outputAnimation->fromPos.vx) / numberOfSteps;
+	outputAnimation->deltaPos.vy = (outputAnimation->toPos.vy - outputAnimation->fromPos.vy) / numberOfSteps;
+	outputAnimation->deltaPos.vz = (outputAnimation->toPos.vz - outputAnimation->fromPos.vz) / numberOfSteps;
+
+	// Calculate rotation deltas
+
+	deltaRotX = (preset->to->rotation.vx - preset->from->rotation.vx);
+	deltaRotY = (preset->to->rotation.vy - preset->from->rotation.vy);
+	deltaRotZ = (preset->to->rotation.vz - preset->from->rotation.vz);
+
+	// If delta rotation is more than a half circle, take the other way around
+	if(deltaRotX>2048){
+		outputAnimation->deltaRot.vx =( ((deltaRotX-2048)*-1)<<fixedPointDecimals ) / numberOfSteps;
+	} else {
+		outputAnimation->deltaRot.vx = (deltaRotX<<fixedPointDecimals) / numberOfSteps;
+	}
+
+	if(deltaRotY>2048){
+		outputAnimation->deltaRot.vy = (((deltaRotY-2048)*-1)<<fixedPointDecimals) / numberOfSteps;
+	} else {
+		outputAnimation->deltaRot.vy = (deltaRotY<<fixedPointDecimals) / numberOfSteps;
+	}
+
+	if(deltaRotZ>2048){
+		outputAnimation->deltaRot.vz = (((deltaRotZ-2048)*-1)<<fixedPointDecimals) / numberOfSteps;
+	} else {
+		outputAnimation->deltaRot.vz = (deltaRotZ<<fixedPointDecimals) / numberOfSteps;
+	}
+
+	printf("playCameraAnimation delta pos = %d,%d,%d rot = %d,%d,%d \n", outputAnimation->deltaPos.vx, outputAnimation->deltaPos.vy, outputAnimation->deltaPos.vz, outputAnimation->deltaRot.vx, outputAnimation->deltaRot.vy, outputAnimation->deltaRot.vz);
+
+	outputAnimation->currentPos = outputAnimation->fromPos;
+	outputAnimation->currentRot = outputAnimation->fromRot;
+
+}
+
+void updateCameraAnimation( CameraAnimation *animation, MATRIX *outputMatrix )
+{
+	if(animation->currentStep >= animation->numTotalSteps){
+		return;
+	}
+
+	animation->currentStep++;
+
+	// X pos
+
+	if( animation->deltaPos.vx < 0 )
+	{
+		if(animation->currentPos.vx > animation->toPos.vx )
+		{
+			animation->currentPos.vx += animation->deltaPos.vx;
+		}
+	} 
+	else 
+	{
+		if(animation->currentPos.vx < animation->toPos.vx )
+		{
+			animation->currentPos.vx += animation->deltaPos.vx;
+		}
+	}
+
+	// Y pos	
+	
+	if( animation->deltaPos.vy < 0 )
+	{
+		if(animation->currentPos.vy > animation->toPos.vy )
+		{
+			animation->currentPos.vy += animation->deltaPos.vy;
+		}
+	} 
+	else 
+	{
+		if(animation->currentPos.vy < animation->toPos.vy )
+		{
+			animation->currentPos.vy += animation->deltaPos.vy;
+		}
+	}
+
+	
+	// Z pos
+	
+	if( animation->deltaPos.vz < 0 )
+	{
+		if(animation->currentPos.vz > animation->toPos.vz )
+		{
+			animation->currentPos.vz += animation->deltaPos.vz;
+		}
+	} 
+	else 
+	{
+		if(animation->currentPos.vz < animation->toPos.vz )
+		{
+			animation->currentPos.vz += animation->deltaPos.vz;
+		}
+	}
+
+	// X rotation
+
+	if( animation->deltaRot.vx < 0)
+	{
+		if(animation->currentRot.vx > animation->toRot.vx)
+		{
+			animation->currentRot.vx += animation->deltaRot.vx;
+		}
+	} else 
+	{
+		if(animation->currentRot.vx < animation->toRot.vx)
+		{
+			animation->currentRot.vx += animation->deltaRot.vx;
+		}
+	}
+
+	// Y rotation
+
+	if( animation->deltaRot.vy < 0)
+	{
+		if(animation->currentRot.vy > animation->toRot.vy)
+		{
+			animation->currentRot.vy += animation->deltaRot.vy;
+		}
+	} else 
+	{
+		if(animation->currentRot.vy < animation->toRot.vy)
+		{
+			animation->currentRot.vy += animation->deltaRot.vy;
+		}
+	}
+
+	// Z rotation
+
+	if( animation->deltaRot.vz < 0)
+	{
+		if(animation->currentRot.vz > animation->toRot.vz)
+		{
+			animation->currentRot.vz += animation->deltaRot.vz;
+		}
+	} else 
+	{
+		if(animation->currentRot.vz < animation->toRot.vz)
+		{
+			animation->currentRot.vz += animation->deltaRot.vz;
+		}
+	}
+
+	{
+		SVECTOR roundedRotation;
+		VECTOR roundedPosition;
+
+		roundedRotation.vx = animation->currentRot.vx >> fixedPointDecimals;
+		roundedRotation.vy = animation->currentRot.vy >> fixedPointDecimals;
+		roundedRotation.vz = animation->currentRot.vz >> fixedPointDecimals;
+
+		roundedPosition.vx = animation->currentPos.vx >> fixedPointDecimals;
+		roundedPosition.vy = animation->currentPos.vy >> fixedPointDecimals;
+		roundedPosition.vz = animation->currentPos.vz >> fixedPointDecimals;
+		
+		RotMatrix_gte(&roundedRotation, outputMatrix); // Calculate rotation matrix from vector
+		TransMatrix(outputMatrix,&roundedPosition);
+	}
+}
+
 int doModel()
 {
 	const static int screenWidth = 320;
 	const static int screenHeight = 256;
 	const static int BALL_RADIUS = 184;
+
+	const CameraPreset cameraRunRightBegin 	= { {-400,170,1100,0} , {0,-590,0,0} };
+	const CameraPreset cameraRunRightEnd 	= { {1000,170,730,0} , {0,-890,0,0} };
+
+	const CameraPreset cameraRunLeftBegin = {{400,220,1100,0},{0,860,0,0}};
+	const CameraPreset cameraRunLeftEnd = {{-1000,220,1100,0},{0,860,0,0}};
+
+	const CameraPreset cameraFacingCamera 	= { { 0,110,200,0} , {0,20,0,0} };
+	const CameraPreset cameraFacingCameraZoomedALittleMore 	= { { 0,280,310,0} , {-600,20,0,0} };
+	const CameraPreset cameraDefault 			= { { 0,100,1000,0 } , { 0,0,0,0 } };
+	const CameraPreset cameraFacingRight 		= { {-10,110,150,0} , {0,-970,0,0} };
+
+	const CameraAnimationPreset cameraAnimationRunRight = { &cameraRunRightBegin , &cameraRunRightEnd };
+	const CameraAnimationPreset cameraAnimationRunLeft = { &cameraRunLeftBegin , &cameraRunLeftEnd };
+
+	const CameraAnimationPreset cameraAnimationZoomFace = { &cameraFacingCamera, &cameraFacingCameraZoomedALittleMore };
 	
-	VECTOR posVec = { 0,100,1000,0 };
-	SVECTOR rotVec = { 0,0,0,0 };
-	
+	// current camera animation
+	CameraAnimation cameraAnimation =  {0,0,0,0,0,0,0,0,0,0}; 
+
+	// Current camera
+	CameraPreset camera = cameraDefault;
+
+
 	int numModels = 2;
 	int ballvelocity = -10;
 	VECTOR ballposition = {0,-BALL_RADIUS,300,0};
@@ -277,12 +505,11 @@ int doModel()
 		}
 		
 	}
-	
-
 			
 	while(1)
 	{
 		static int animationTrigger = 0;
+		static int steps = 0;
 		
 		MATRIX m;
 		POLY_G3 *currentDstPoly;
@@ -293,14 +520,43 @@ int doModel()
 		
 		pad = PadRead(0);
 		
-		if (pad & PADLup)	posVec.vz += 10;
-		if (pad & PADLdown)	posVec.vz -= 10;
-		
-		if (pad & PADLleft)	rotVec.vy += 10;
-		if (pad & PADLright)rotVec.vy -= 10;
-		if (pad & PADRup)	rotVec.vz += 10;
-		if (pad & PADRdown)	rotVec.vz -= 10;
+		if (pad & PADLup) camera = cameraDefault;
+		if (pad & PADLleft)	camera = cameraFacingRight;
+		if (pad & PADLdown)	camera = cameraFacingCamera;
 
+		if (pad & PADRleft) playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
+		if (pad & PADRright) playCameraAnimation(&cameraAnimationRunRight,&cameraAnimation,200);
+
+		// Scripted steps
+
+		if(steps==0){
+			playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
+			//playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
+		}
+
+		if( steps == 200 ){
+			playCameraAnimation(&cameraAnimationRunRight,&cameraAnimation,200);
+		}
+
+		if( steps >= 400 )
+		{
+			camera = cameraFacingCamera;
+			RotMatrix_gte(&camera.rotation, &m);
+			TransMatrix(&m,&camera.position);
+		}
+
+		// Set camera
+
+		if( cameraAnimation.currentStep < cameraAnimation.numTotalSteps ){
+				updateCameraAnimation(&cameraAnimation,&m);
+		} else {
+			RotMatrix_gte(&camera.rotation, &m); // Calculate rotation matrix from vector
+			TransMatrix(&m,&camera.position);
+		}
+
+		steps++;
+
+		// update animation
 
 		modelBall.rotation->vx += 10;
 		modelBall.position->vy += ballvelocity;
@@ -311,22 +567,12 @@ int doModel()
 
 		ballvelocity+=1;
 
-		// update animation
 		animationTrigger += 1;
 		if(animationTrigger == 2)
 		{
 			updateAnimation(&animation);
 			animationTrigger = 0;
 		}
-	
-
-		RotMatrix_gte(&rotVec, &m); // Calculate rotation matrix from vector
-		TransMatrix(&m,&posVec);
-		
-		SetTransMatrix(&m);
-		SetRotMatrix(&m);	
-
-
 		
 		// add Poly 3s
 

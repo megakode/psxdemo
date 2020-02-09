@@ -1,0 +1,1 @@
+C:\code\tools\mkpsxiso\mkpsxiso.exe -y -q cdrom\cdrom.xml

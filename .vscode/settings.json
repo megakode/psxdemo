@@ -3,6 +3,7 @@
         "font.h": "c",
         "dsrlib.h": "c",
         "MAIN.C": "cpp",
-        "LAND.C": "cpp"
+        "LAND.C": "cpp",
+        "PICTURE.C": "cpp"
     }
 }

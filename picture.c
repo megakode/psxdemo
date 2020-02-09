@@ -11,6 +11,7 @@
 
 #include "picture.h"
 
+#include "pal.h"
 
 typedef struct {		
 	DRAWENV		draw;			/* drawing environment */

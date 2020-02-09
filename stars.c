@@ -153,14 +153,10 @@ void doStars()
 	
 	setupBuffer(&db[0]);
 	setupBuffer(&db[1]);
-
-	EnterCriticalSection();
-	InitHeap3(0x80060A58,100000);
-	ExitCriticalSection();
 	
-	stars = (SVECTOR*) malloc3(sizeof(SVECTOR)*NUM_STARS);
-	db[0].tiles = (TILE_1*) malloc3(sizeof(TILE_1)*NUM_STARS);
-	db[1].tiles = (TILE_1*) malloc3(sizeof(TILE_1)*NUM_STARS);
+	stars = (SVECTOR*) malloc(sizeof(SVECTOR)*NUM_STARS);
+	db[0].tiles = (TILE_1*) malloc(sizeof(TILE_1)*NUM_STARS);
+	db[1].tiles = (TILE_1*) malloc(sizeof(TILE_1)*NUM_STARS);
 	star = stars;
 	
 	for( i = 0; i < NUM_STARS ; i++ , star++ )
@@ -327,9 +323,9 @@ void doStars()
 	
 	}
 	
-	free3(stars);
-	free3(db[0].tiles);
-	free3(db[1].tiles);
+	free(stars);
+	free(db[0].tiles);
+	free(db[1].tiles);
 	
 
 } 

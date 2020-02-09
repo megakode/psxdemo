@@ -13,7 +13,7 @@
 #include "biosfont.h"
 #include "Sinsweep.h"
 
-#define ENDLESS_LOOP true
+//#define ENDLESS_LOOP true
 
 #define CUBESCENE_X_RES 320
 #define CUBESCENE_Y_RES 256
@@ -33,7 +33,7 @@
 #define VERT_DISTANCE_BETWEEN_CUBES 12
 #define CS (8 / 2) // half because all points are offset from the cube center by this value
 
-const char *scrollText = "    DESIRE - REVISION 2019 ";
+const char *scrollText = "    KEEPING THE SCENE ALIVE - WE LOVE YOU REVISION 2020 ";
 //const char *scrollText = "    TEST! ";
 int scrollTextLetterIndex = 0;
 int scrollTextPixelIndex = 0;
@@ -401,14 +401,14 @@ void doCubes()
 	initSineTables();
 	
 	SetDispMask(0);
-	
+	/*
 	ResetGraph(0);
 	ResetCallback();
 	PadInit(0);
 	SetGraphDebug(0);
 	
 	InitGeom();
-
+*/
 	gte_SetGeomOffset(0, 0);	
 	gte_SetGeomScreen(SCR_Z);	
 	//SetVideoMode(MODE_PAL);
