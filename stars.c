@@ -9,8 +9,10 @@
 #define LOGO_TEXTURE_X_POS 320
 #define LOGO_TEXTURE_HEIGHT 256
 #define TEXT_LINES_PR_PAGE 5
-#define TEXT_LINES 35
+#define TEXT_LINES 30
 #define TEXT_SPRITES 32*5
+
+// #define ENDLESS_LOOP true
 
 typedef struct {		
 	DRAWENV		draw;			/* drawing environment */
@@ -35,11 +37,6 @@ int textLineIndex = 0;
 
 const char *textLines[TEXT_LINES] = {
 
-"          Desire presents       ",
-"       a small Playstation 1    ",
-"              intro...          ",
-"                                ",
-"                                ",
 
 "                                ",
 "       Coding like its 1999     ",
@@ -48,10 +45,10 @@ const char *textLines[TEXT_LINES] = {
 "                                ",
 
 "         Developed using:       ",
+"                                ",
 "         Win98 PC @ 133MHz      ",
 "          SONY Psy-Q SDK        ",
 "        X-Plorer cartridge      ",
-"             Notepad++          ",
 
 "              Code:             ",
 "                                ",
@@ -67,13 +64,13 @@ const char *textLines[TEXT_LINES] = {
 
 "              Music:            ",
 "                                ",
-"             ........           ",
+"              Dascon            ",
 "                                ",
 "                                ",
 
-"          We <3 you all         ",
 "                                ",
-"       Keep the scene alive     ",
+"                                ",
+"          We <3 you all         ",
 "                                ",
 "                                "
 };
@@ -121,6 +118,7 @@ void setupBuffer( DB *buffer )
 
 void doStars()
 {
+	int done = 0;
 	int starsNearClip = 50;
 	int near = 250;
 	int far = 500;
@@ -129,6 +127,8 @@ void doStars()
 	int i;
 	unsigned char sinIndex;
 	unsigned char sinIndex2 = 50; // random offset
+	int logoMoveSpeed = 8;
+	int logoX = -64;
 	int textTicks = 0;
 	SVECTOR *star;
 	SVECTOR rot = {0,0,0};
@@ -215,14 +215,22 @@ void doStars()
 	
 	//printf("done");
 
-	while(1)
+	db[0].logoSpr.x0 = -64;
+	db[1].logoSpr.x0 = -64;
+
+
+	while(!done)
 	{
 		CVECTOR colorIn,colorOut;
 		SPRT_8 *currentSpritePtr;
 		
 		cdb = (cdb==db)? db+1: db;	/* swap double buffer ID */	
 		ClearOTag(cdb->ot, OTSIZE);	/* clear ordering table */
-		
+
+		if(logoX < 0)logoX += logoMoveSpeed;
+		if(logoMoveSpeed>1)logoMoveSpeed--;
+		cdb->logoSpr.x0 = logoX;
+
 		rot.vx = sinTable[sinIndex2]>>1;
 		rot.vz = sinTable[sinIndex];
 		//printf("sintable[%d] = %d \r\n",sinIndex+128,rot.vx);
@@ -279,7 +287,11 @@ void doStars()
 			textTicks = 0;
 			textLineIndex += 5;
 			if(textLineIndex>=TEXT_LINES){
+				#ifdef ENDLESS_LOOP
 				textLineIndex = 0;
+				#else
+				done = 1;
+				#endif
 			}
 		}
 		

@@ -78,19 +78,23 @@ void drawString(char *str,int xpos,int ypos,SPRT_8 **startingSprite,u_long *ot)
 }
 
 
-static u_short clut[256];
+static u_short storedClut[256];
+static u_short storedClutX;
+static u_short storedClutY;
 static int fadeStepsLeft;
 static int fadeDelay;
 
 void initFadeClut(int clutX, int clutY)
 {
 	RECT rect = {clutX,clutY,256,1};
-	StoreImage2(&rect,(u_long*)&clut);
+	StoreImage2(&rect,(u_long*)&storedClut);
 	fadeStepsLeft = 32;
 	fadeDelay = 2;
+	storedClutX = clutX;
+	storedClutY = clutY;
 }
 
-void doFadeClut(int clutX, int clutY)
+void doFadeClut()
 {	
 	u_short colorIndex = 0;
 	u_short color;
@@ -117,7 +121,7 @@ void doFadeClut(int clutX, int clutY)
 	
 	for( colorIndex = 0 ; colorIndex < 256 ; colorIndex++ ){
 	
-		color = clut[colorIndex];
+		color = storedClut[colorIndex];
 	
 		r =  color & 31;
 		g = (color >> 5) & 31;
@@ -127,12 +131,12 @@ void doFadeClut(int clutX, int clutY)
 		if(g>0) g-= g/fadeStepsLeft;
 		if(b>0) b-= b/fadeStepsLeft;
 
-		clut[colorIndex] = (r) | ((g << 5)) | (b << 10);
+		storedClut[colorIndex] = (r) | ((g << 5)) | (b << 10);
 		
 	}
 	
 	fadeStepsLeft--;
 	
-	LoadClut((u_long*)clut,clutX,clutY);
+	LoadClut((u_long*)storedClut,storedClutX,storedClutY);
 
 }

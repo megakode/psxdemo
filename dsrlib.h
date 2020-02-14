@@ -83,6 +83,6 @@ void drawString(char *str,int xpos,int ypos,SPRT_8 **startingSprite,u_long *ot);
 
 void initFadeClut(int clutX, int clutY);
 
-void doFadeClut(int clutX, int clutY);
+void doFadeClut();
 
 #endif

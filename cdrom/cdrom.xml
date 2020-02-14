@@ -165,6 +165,7 @@
 		Plans for supporting FLAC as source audio were considered but dropped because Lameguy64 found it to
 		be impossible to compile libflac under Windows and that most people usually use XA audio over CDDA anyway.
 	-->
-	<track type="audio" source="./cdrom/drax_-_illusions.wav"/>
+	<!-- <track type="audio" source="./cdrom/drax_-_illusions.wav"/> -->
+	<track type="audio" source="./cdrom/jch_chordian.wav"/>
 	
 </iso_project>

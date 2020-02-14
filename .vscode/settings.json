@@ -4,6 +4,8 @@
         "dsrlib.h": "c",
         "MAIN.C": "cpp",
         "LAND.C": "cpp",
-        "PICTURE.C": "cpp"
+        "PICTURE.C": "cpp",
+        "DSRLIB.C": "cpp",
+        "DSRLIB.H": "cpp"
     }
 }

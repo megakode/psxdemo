@@ -395,6 +395,7 @@ void doLandscape()
 	int near = 600;
 	int far = 4000;
 	int landMoveCounter = 0;
+	int ticks = 0;
 	SPRT_8 *currentSpritePtr;
 /*
 	ResetGraph(0);
@@ -443,8 +444,12 @@ void doLandscape()
 	
 	initFadeClut(320,128);
 
-	while (1) 
+	near = -600;
+
+	while (ticks < 500) 
 	{
+		ticks++;
+		printf("ticks %d \n",ticks);
 		cdb  = (cdb == landscapeSceneBuffers[0]) ? landscapeSceneBuffers[1] : landscapeSceneBuffers[0];
 		
 		PutDispEnv(&cdb->disp);
@@ -454,6 +459,8 @@ void doLandscape()
 		
 		if( pad & PADLleft) doFadeClut(320,128);
 		
+		if (ticks<200)near+=10;
+		if(ticks>300)near-=10;
 		if (pad & PADLup)	near += 100;
 		if (pad & PADLdown)	near -= 100;
 		if (pad & PADRup)	far += 100;
@@ -487,7 +494,7 @@ void doLandscape()
 		currentSpritePtr = cdb->textSprites;
 		
 		drawString("               Presents                 ",0,135,&currentSpritePtr,cdb->ot);
-		drawString("          A PlayStation demo            ",0,155,&currentSpritePtr,cdb->ot);
+		drawString("         A PlayStation intro            ",0,155,&currentSpritePtr,cdb->ot);
 		drawString("        in state of the art 3D          ",0,165,&currentSpritePtr,cdb->ot);
 		
 		AddPrim(cdb->ot,&cdb->textTPage); // Add texture page change as last item in current OT entry (which is actually run first)

@@ -14,3 +14,5 @@ ccpsx @main.lnk
 cpe2x main.cpe
 
 del main.cpe
+
+C:\code\tools\mkpsxiso\mkpsxiso.exe -y -q cdrom\cdrom.xml

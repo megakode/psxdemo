@@ -11,10 +11,11 @@
 #include <libapi.h>
 
 #include "land.h" 		// Land fly-over intro scene
-//#include "cubescroll.h"	// Cube scroller
+#include "cubescroll.h"	// Cube scroller
 #include "model.h"	// show picture
-//#include "stars.h"
-
+#include "stars.h"
+#include "binaryst.h"
+#include "citadel.h"
 #include "PICTURE.H"
 //#include "war320.h"		// GFX: war of the worlds picture data
 #include "dsrpsx.h" 		// GFX: Desire PSX logo
@@ -52,8 +53,6 @@ int main()
 	
 	SetFarColor(10,10,10);
 	
-	// Sometimes these 3 lines makes the PSX crash. Reset the h/w, that sometimes helps (!?)
-	
 	/*
 	MOD_Init();
 	
@@ -66,12 +65,29 @@ int main()
 	*/
 	CdPlay(2,tracks,0);
 	//CdControl(CdlPlay, (u_char*)&loc, 0);
+
+
 	
-	doPicture((u_long*)dsrpsx,256,200);
+		
+	doPicture((u_long*)dsrpsx,256,32,16,200);
+/*
+	doLandscape();
+
+	{
+		int delay = 60;
+		while(delay--){
+			VSync(0);		// wait for the next V-BLNK 
+		}
+	}
+
+	doPicture((u_long*)binaryst,320,0,0,500);
+*/	
+	doStars();
+
+	doPicture((u_long*)cita,320,0,0,500);
 	
-	//doStars();
 	doCubes();
-	
-	//doLandscape();
+
 	doModel();
+
 }

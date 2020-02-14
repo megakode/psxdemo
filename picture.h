@@ -8,6 +8,6 @@
 
 #define MAX_SHRINK_AMOUNT 8
 
-void doPicture( u_long *tim , int screenWidth, int showPictureTicks);
+void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPictureTicks);
 
 #endif

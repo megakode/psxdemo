@@ -31,7 +31,7 @@ int *cellShrinkAmount;
 // Setup primitives
 // *************************************************************
 
-static void setupPrimitives( DB *db, int cols, int rows )
+static void setupPrimitives( DB *db, int cols, int rows)
 {	
 	int x,y;
 	POLY_F4 *poly;
@@ -47,7 +47,6 @@ static void setupPrimitives( DB *db, int cols, int rows )
 		int py = y<<4;
 		
 		SetPolyF4(poly);		/* FlatTexture Quadrangle */
-			
 		setRGB0(poly,0,0,0);
 		setXY4(poly,
 			   px,py,
@@ -66,7 +65,7 @@ static void setupPrimitives( DB *db, int cols, int rows )
 // doPicture
 // *************************************************************
 
-void doPicture( u_long *tim , int screenWidth, int showPictureTicks)
+void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPictureTicks)
 {
 	const int screenHeight = 256;
 	int i,timWidth,timHeight,cols,rows;
@@ -124,7 +123,7 @@ void doPicture( u_long *tim , int screenWidth, int showPictureTicks)
 	SetDispMask(1);
 
 	OpenTIM(tim);
-	while (ReadTIM(&header)) 
+	if(ReadTIM(&header))
 	{
 		if (header.caddr) {	/* load CLUT (if needed) */
 //			setSTP(image.caddr, image.crect->w);
@@ -150,10 +149,14 @@ void doPicture( u_long *tim , int screenWidth, int showPictureTicks)
 			dumpRECT(header.prect);
 			//printf("header width=%d",header.prect->w);
 		}
+
+		printf("timWidth=%d timHeight=%d",timWidth,timHeight);
+	} else {
+		printf("error reading tim!");
 	}
 	
 	
-	printf("timWidth=%d timHeight=%d",timWidth,timHeight);
+	
 	
 	/*
 	TIM is located at:
@@ -189,7 +192,7 @@ void doPicture( u_long *tim , int screenWidth, int showPictureTicks)
 			
 		ClearOTag(cdb->ot, OTSIZE_WAR);	/* clear ordering table */
 		
-		MoveImage(header.prect,32,cdb->draw.clip.y+16);
+		MoveImage(header.prect,xoffs,cdb->draw.clip.y+yoffs);
 		ticks++;
 		
 		if( state == FadeIn )
