@@ -13,6 +13,8 @@
 #include <libgs.h>
 
 
+typedef enum { FadeUp , FadeDown  } ClutFadeDirection;
+
 // vertexData
 
 // int16 x;
@@ -81,8 +83,25 @@ void setLetter(SPRT_8 *sprite,char letter, int xpos, int ypos);
 
 void drawString(char *str,int xpos,int ypos,SPRT_8 **startingSprite,u_long *ot);
 
-void initFadeClut(int clutX, int clutY);
+// ************************************************************
+//  Store the clut located at video memory position clutX,clutY
+//  into memory.
+// ************************************************************
 
-void doFadeClut();
+void clutFadeInit(int clutX, int clutY, ClutFadeDirection direction );
+
+// ************************************************************
+// Restores the stored Clut back into VRAM
+// ************************************************************
+void clutFadeRestore();
+
+// ************************************************************
+// Fade out the clut cached in memory, and copy it back to the
+// location in video memory where we initially got it from in initFadeClut.
+//
+// return 1 if still fading, 0 if done
+//
+// ************************************************************
+int clutFadeDown();
 
 #endif

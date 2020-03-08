@@ -11,15 +11,17 @@
 
 #include "picture.h"
 
-#include "pal.h"
+#define OTSIZE 20
 
-const static OTSIZE = 10;
+const static SPRITE_WIDTH = 64;
+const static SPRITE_HEIGHT = 256;
 
 typedef struct {		
 	DRAWENV		draw;			/* drawing environment */
 	DISPENV		disp;			/* display environment */
 	u_long		ot[OTSIZE];		/* ordering table */
 	SPRT	*sprites;	/* mesh cell */
+	DR_TPAGE *spriteTexturePages;
 } DB;
 
 DB	db[2];		/* double buffer */
@@ -30,27 +32,54 @@ u_long	*ot;		/* current OT */
 // Setup primitives
 // *************************************************************
 
-static void setupPrimitives( DB *db, int cols, int rows, int spriteWidth, int spriteHeight)
+static void setupPrimitives( DB *db, int cols, int rows, int spriteWidth, int spriteHeight, int pictureSrcX, int pictureSrcY, int clutSrcX,int clutSrcY, int textureMode)
 {	
 	int x,y;
 	SPRT *sprite;
+	DR_TPAGE *tpage;
+	u_short tpageid;
+	int texturePageWidth;
+	
+	// 0=4bit 1=8bit 2=16bit_direct
 	
 	db->sprites = (SPRT*)malloc(sizeof(SPRT)*cols*rows);
-	
+	db->spriteTexturePages = (DR_TPAGE*)malloc(sizeof(DR_TPAGE)*cols*rows);
+	//db->ot = (u_long*)malloc(sizeof(u_long*)*(cols*rows + 1));
+//	db->ot = (u_long*)malloc(OTSIZE);
+
 	sprite = db->sprites;
+	tpage = db->spriteTexturePages;
 	
 	for( y = 0 ; y < rows; y++ )
-	for( x = 0 ; x < cols; x++)
+	for( x = 0 ; x < cols; x++ )
 	{
-		int px = x*spriteWidth;
-		int py = y*spriteHeight;
+		int texturePageX = (x*spriteWidth);
+		int texturePageY = (y*spriteHeight);
 		
 		setSprt(sprite);
-		//setRGB0(sprite,0,0,0);
-		setXY(sprite,px,py);
-        setUV0(sprite,px,py); // TODO: modulate these to texture page width
-				   
-		sprite++;
+		setXY0(sprite,texturePageX,texturePageY);
+		setWH(sprite,spriteWidth,spriteHeight);
+		SetShadeTex(sprite, 1); // Set texture shading to off
+        
+		if (textureMode==0){ // 4 bit
+			// texturePageWidth = 64;
+			setUV0(sprite,0,0);
+		} else if(textureMode==1){ // 8 bit
+			// texturePageWidth = 128;
+			setUV0(sprite,0 + (texturePageX & 64) ,0);
+		} else if (textureMode==2){ // 16 bit direct
+			// texturePageWidth = 256;
+			setUV0(sprite,0,0);
+		}
+
+
+		setClut(sprite,clutSrcX,clutSrcY);
+
+		tpageid = GetTPage(textureMode,0,pictureSrcX + (texturePageX>>1),pictureSrcY + texturePageY);
+		setDrawTPage(tpage,0,0,tpageid);	   
+
+		sprite+=1;
+		tpage+=1;
 	}
 	
 
@@ -60,20 +89,20 @@ static void setupPrimitives( DB *db, int cols, int rows, int spriteWidth, int sp
 // doPicture
 // *************************************************************
 
-void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPictureTicks)
+void doFadePicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPictureTicks)
 {
 	const int screenHeight = 256;
 	int i,timWidth,timHeight,cols,rows;
-	int clutId = 0;
+	int textureMode = 0; 	// 0=4bit 1=8bit 2=16bit_direct
 	
 	typedef enum {
-		FadeIn,
-		ShowPicture,
-		FadeOut,
-		Done
+		FadeInState,
+		ShowPictureState,
+		FadeOutState,
+		DoneState
 	} State;
 	
-	State state = FadeIn;
+	State state = FadeInState;
 	int ticks = 0;
 	int shrinkingLine = 0;
 	int shrinkTrigger = 0;
@@ -81,7 +110,8 @@ void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPic
 	
 	TIM_IMAGE	header;
 	
-	POLY_F4 *poly;
+	SPRT *sprite;
+	DR_TPAGE *tpage;
 /*
 	InitGeom();
 	
@@ -123,8 +153,6 @@ void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPic
 		if (header.caddr) {	/* load CLUT (if needed) */
 //			setSTP(image.caddr, image.crect->w);
 			LoadImage(header.crect, header.caddr);
-			//clutId = GetClut(header.crect->x,header.crect->y);
-			clutId = GetClut(header.crect->x,header.crect->y);
 		}
 		if (header.paddr){ 	/* load texture pattern */
 			timWidth = header.prect->w;
@@ -133,11 +161,14 @@ void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPic
 			if(header.mode==8){
 				printf("4bpp TIM detected\n");
 				timWidth*=4; // 4bpp (as the prect->width says how many 16bpp pixels in the VRAM that the tim file occupies
+				textureMode = 0;
 			}else if(header.mode==9){
 				printf("8bpp TIM detected\n");
 				timWidth*=2; // 8bpp
+				textureMode = 1;
 			} else {
 				printf("16bpp TIM detected\n");
+				textureMode = 2;
 			}
 			timHeight = header.prect->h;
 			LoadImage(header.prect, header.paddr);
@@ -145,9 +176,9 @@ void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPic
 			//printf("header width=%d",header.prect->w);
 		}
 
-		printf("timWidth=%d timHeight=%d",timWidth,timHeight);
+		printf("timWidth=%d timHeight=%d \n",timWidth,timHeight);
 	} else {
-		printf("error reading tim!");
+		printf("error reading tim!\n");
 	}
 	
 	
@@ -161,154 +192,72 @@ void doPicture( u_long *tim , int screenWidth, int xoffs, int yoffs, int showPic
 	header.prect.height
 	*/
 
-	cols = screenWidth / 16;
-	rows = screenHeight / 16;
+	cols = screenWidth / SPRITE_WIDTH;
+	rows = screenHeight / SPRITE_HEIGHT;
 	
-	setupPrimitives(&db[0],cols,rows);	/* initialize primitive buffers #0 */
-	setupPrimitives(&db[1],cols,rows);	/* initialize primitive buffers #1 */
+	setupPrimitives(&db[0],cols,rows,SPRITE_WIDTH,SPRITE_HEIGHT,header.prect->x,header.prect->y,header.crect->x,header.crect->y,textureMode);	
+	setupPrimitives(&db[1],cols,rows,SPRITE_WIDTH,SPRITE_HEIGHT,header.prect->x,header.prect->y,header.crect->x,header.crect->y,textureMode);	
+	clutFadeInit(header.crect->x,header.crect->y, FadeInState);
 	
-	
-	cellShrinkAmount = (int*)malloc(sizeof(int)*rows);
-	
-	for(i = 0 ; i < rows ; i++)
-	{
-		cellShrinkAmount[i] = 0;
-	}
-	
-	
-	while(state != Done)
+	while(state != DoneState)
 	{	
 		int x,y;
+		u_long *ot;
 	
 		cdb = (cdb==db)? db+1: db;	/* swap double buffer ID */
-		
+		ot = cdb->ot;
 		PutDrawEnv(&cdb->draw); /* update drawing environment */
 		PutDispEnv(&cdb->disp); /* update display environment */
-			
-		ClearOTag(cdb->ot, OTSIZE_WAR);	/* clear ordering table */
-		
-		MoveImage(header.prect,xoffs,cdb->draw.clip.y+yoffs);
+
+		ClearOTag(ot,OTSIZE);
+
+		for( i = 0, sprite = cdb->sprites, tpage = cdb->spriteTexturePages ; i < rows*cols ; i++ )
+		{
+			AddPrim(ot,sprite);
+			AddPrim(ot,tpage);
+
+			sprite+=1;
+			tpage+=1;
+			ot+=1;
+		}
+
 		ticks++;
 		
-		if( state == FadeIn )
+		if( state == FadeInState )
 		{
-
-			// Fade in (line style)
-			
-			if(cellShrinkAmount[rows-1] < MAX_SHRINK_AMOUNT)
-			{	
-				shrinkTrigger++;
-				if(shrinkTrigger >= 3)
-				{
-					shrinkTrigger = 0;
-					
-					// Start shrinking of next line?
-					shrinkAdvanceLineTrigger++;
-					if(shrinkAdvanceLineTrigger == 3 && shrinkingLine < rows-1)
-					{
-						shrinkAdvanceLineTrigger = 0;
-						shrinkingLine++;
-					}
+			if(!clutFade()){
+				state = ShowPictureState;
+				// Restore the original palette, just to be sure we have the correct colors when showing he final image.
+				clutFadeRestore();
+				// Setup the fade routine for fading down
 				
-					// Shrink all the lines that are above 'shrinkingLine'
-					for(i = 0; i <= shrinkingLine ; i++)
-					{
-						if(cellShrinkAmount[i] < MAX_SHRINK_AMOUNT)
-						{
-							cellShrinkAmount[i]++;
-						}
-					}
-					
-				}
-			
-			} else 
-			{
-				shrinkingLine = 0;
-				state = ShowPicture;	
 			}
-		
-		} else if( state == ShowPicture )
-		{
-			
-			// Show picture
-			
+		}
+		else if( state == ShowPictureState )
+		{	
 			if( ticks >= showPictureTicks )
 			{
-				shrinkingLine = 0;
-				state = FadeOut;
+				state = FadeOutState;
+				clutFadeInit(header.crect->x,header.crect->y, FadeDown);
+				clutFade();
 			}
-		
-		} else if( state == FadeOut )
-		{
-			if(cellShrinkAmount[rows-1] > 0)
-			{	
-				shrinkTrigger++;
-				if(shrinkTrigger >= 3)
-				{
-					shrinkTrigger = 0;
-					
-					// Start shrinking of next line?
-					shrinkAdvanceLineTrigger++;
-					if(shrinkAdvanceLineTrigger >= 3 && shrinkingLine < rows-1)
-					{
-						shrinkAdvanceLineTrigger = 0;
-						shrinkingLine++;
-					}
-				
-					// Shrink all the lines that are above 'shrinkingLine'
-					for(i = 0; i <= shrinkingLine ; i++)
-					{
-						if(cellShrinkAmount[i] > 0)
-						{
-							cellShrinkAmount[i]--;
-						}
-					}
-					
-				}
-			
-			} else 
-			{
-				
-				state = Done;	
-			}
-		
 		} 
-		else if (state == Done )
+		else if( state == FadeOutState )
 		{
-			//printf("state=Done");
-		}
-		
-		poly = cdb->cells;
-		
-		for( y = 0 ; y < rows; y++ )
-		for( x = 0 ; x < cols; x++ , poly++)
-		{
-			int px = x<<4;
-			int py = y<<4;
+			if(!clutFade()){
+				state = DoneState;				
+			}
+		} 
 
-			setXY4(poly,
-				   px+cellShrinkAmount[y],py+cellShrinkAmount[y],
-				   px+16-cellShrinkAmount[y],py+cellShrinkAmount[y],
-				   px+cellShrinkAmount[y],py+16-cellShrinkAmount[y],
-				   px+16-cellShrinkAmount[y],py+16-cellShrinkAmount[y]
-				   );
-				   
-			AddPrim(cdb->ot+OTSIZE_WAR-1,poly);
-					   
-		}
-		
-		
-		DrawSync(0);		/* wait for end of drawing */
-		
+		DrawSync(0);
 		DrawOTag(cdb->ot);	  /* draw */
-		
-		VSync(0);		/* wait for the next V-BLNK */
-
+		VSync(0);		
 
 	}
 
-	free(db[0].cells);
-	free(db[1].cells);
-	free(cellShrinkAmount);
+	free(db[0].sprites);
+	free(db[0].spriteTexturePages);
+	free(db[1].sprites);
+	free(db[1].spriteTexturePages);
 
 }

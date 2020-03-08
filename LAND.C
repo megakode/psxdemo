@@ -442,7 +442,7 @@ void doLandscape()
 	loadTIM((unsigned char*)&landlogo);
 	loadTIM((unsigned char*)&font);
 	
-	initFadeClut(320,128);
+	clutFadeInit(320,128,FadeDown);
 
 	near = -600;
 
@@ -456,8 +456,6 @@ void doLandscape()
 		PutDrawEnv(&cdb->draw);
 
 		pad = PadRead(0);
-		
-		if( pad & PADLleft) doFadeClut(320,128);
 		
 		if (ticks<200)near+=10;
 		if(ticks>300)near-=10;

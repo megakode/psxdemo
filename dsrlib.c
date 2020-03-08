@@ -78,65 +78,122 @@ void drawString(char *str,int xpos,int ypos,SPRT_8 **startingSprite,u_long *ot)
 }
 
 
-static u_short storedClut[256];
+static u_short origClut[256]; // The original CLUT located in 
+static u_short currentClut[256];
 static u_short storedClutX;
 static u_short storedClutY;
 static int fadeStepsLeft;
 static int fadeDelay;
+static ClutFadeDirection fadeDirection;
 
-void initFadeClut(int clutX, int clutY)
+void clutFadeInit(int clutX, int clutY, ClutFadeDirection direction )
 {
+	int i;
 	RECT rect = {clutX,clutY,256,1};
-	StoreImage2(&rect,(u_long*)&storedClut);
+
+	StoreImage2(&rect,(u_long*)&origClut);
 	fadeStepsLeft = 32;
 	fadeDelay = 2;
 	storedClutX = clutX;
 	storedClutY = clutY;
+	fadeDirection = direction;
+	
+	if(direction == FadeDown ) {
+		for(i=0;i<256;i++){
+			// If fading down:
+			currentClut[i] = origClut[i];
+		}
+	} else {
+		// If fading up: preset all colors to black
+		for(i=0;i<256;i++){
+			
+			currentClut[i] = 0;
+		}
+		// And store that black CLUT into VRAM
+		LoadClut((u_long*)currentClut,storedClutX,storedClutY);
+	}
 }
 
-void doFadeClut()
+// Restores the original CLUT to VRAM that was saved before fading
+void clutFadeRestore()
+{
+	LoadClut((u_long*)origClut,storedClutX,storedClutY);
+}
+
+int clutFade()
 {	
 	u_short colorIndex = 0;
-	u_short color;
-	u_short r;
-	u_short g;
-	u_short b;
-	
 	
 	if(fadeDelay>0){
 		fadeDelay--;
-		return;
+		return 1;
 	} else {
 		fadeDelay=2;
 	}
 	
 	if(fadeStepsLeft==0){
-		return;
+
+		return 0;
 	}
 	
 	// Clut 16 bit pixel format:
 	// |x|B|B|B|B|B|G|G|G|G|G|R|R|R|R|R| 
 
 	// Fade clut
+	if(fadeDirection==FadeDown)
+	{
+		printf("fadedirection=%d down",fadeDirection);
+	}
+	else if(fadeDirection==FadeUp)
+	{
+		printf("fadedirection=%d up",fadeDirection);
+	} else
+	{
+		printf("fade dir unknown");
+	}
+	
+	
 	
 	for( colorIndex = 0 ; colorIndex < 256 ; colorIndex++ ){
 	
-		color = storedClut[colorIndex];
-	
-		r =  color & 31;
-		g = (color >> 5) & 31;
-		b = (color >>10) & 31;
 		
-		if(r>0) r-= r/fadeStepsLeft;
-		if(g>0) g-= g/fadeStepsLeft;
-		if(b>0) b-= b/fadeStepsLeft;
+		
+		if(fadeDirection==FadeDown){
+			u_short color = currentClut[colorIndex];
+			u_short r =  color & 31;
+			u_short g = (color >> 5) & 31;
+			u_short b = (color >>10) & 31;
+			if(r>0) r-= 1;
+			if(g>0) g-= 1;
+			if(b>0) b-= 1;
 
-		storedClut[colorIndex] = (r) | ((g << 5)) | (b << 10);
+			currentClut[colorIndex] = (r) | ((g << 5)) | (b << 10);
+			//printf("r=%d",r);
+		} else {
+
+			u_short origColor = origClut[colorIndex];
+			u_short origR =  origColor & 31;
+			u_short origG = (origColor >> 5) & 31;
+			u_short origB = (origColor >>10) & 31;
+			u_short currentColor = currentClut[colorIndex];
+			u_short r =  currentColor & 31;
+			u_short g = (currentColor >> 5) & 31;
+			u_short b = (currentColor >>10) & 31;
+			
+			if(r<origR) r+=1;
+			if(g<origG) g+=1;
+			if(b<origB) b+=1;
+
+			currentClut[colorIndex] = (r) | ((g << 5)) | (b << 10);
+		}
 		
 	}
 	
 	fadeStepsLeft--;
 	
-	LoadClut((u_long*)storedClut,storedClutX,storedClutY);
+	// Load a stored clut into VRAM
+	LoadClut((u_long*)currentClut,storedClutX,storedClutY);
+
+	return 1;
 
 }

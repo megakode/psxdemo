@@ -5,6 +5,7 @@ ccpsx -c -O2 land.c -oland.obj -comments-c++
 ccpsx -c -O2 stars.c -ostars.obj -comments-c++ 
 ccpsx -c -O2 picture.c -opicture.obj -comments-c++ 
 ccpsx -c -O2 dsrlib.c -odsrlib.obj -comments-c++ 
+ccpsx -c -O2 picfade.c -opicfade.obj -comments-c++ 
 ccpsx -c -O2 model.c -omodel.obj -comments-c++ 
 ccpsx -c -O2 cubescroll.c -ocubesc.obj -comments-c++ 
 asmpsx /g /l /oc+ /j c:\code\psyq\include cubeasm.asm,cubeasm.obj

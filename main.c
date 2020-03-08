@@ -17,7 +17,7 @@
 #include "binaryst.h"
 #include "citadel.h"
 #include "PICTURE.H"
-//#include "war320.h"		// GFX: war of the worlds picture data
+#include "picfade.h"
 #include "dsrpsx.h" 		// GFX: Desire PSX logo
 
 //#include "hitmod/hitmod.h"
@@ -63,14 +63,13 @@ int main()
 
 	MOD_Start();
 	*/
-	CdPlay(2,tracks,0);
-	//CdControl(CdlPlay, (u_char*)&loc, 0);
-
-
 	
-		
+	// works
+	CdPlay(2,tracks,0);
+
+
 	doPicture((u_long*)dsrpsx,256,32,16,200);
-/*
+
 	doLandscape();
 
 	{
@@ -80,11 +79,11 @@ int main()
 		}
 	}
 
-	doPicture((u_long*)binaryst,320,0,0,500);
-*/	
+	doFadePicture((u_long*) binaryst , 320,0, 0, 300);
+
 	doStars();
 
-	doPicture((u_long*)cita,320,0,0,500);
+	doFadePicture((u_long*) citadel , 320,0, 0, 300);
 	
 	doCubes();
 

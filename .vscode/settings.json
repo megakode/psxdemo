@@ -6,6 +6,8 @@
         "LAND.C": "cpp",
         "PICTURE.C": "cpp",
         "DSRLIB.C": "cpp",
-        "DSRLIB.H": "cpp"
+        "DSRLIB.H": "cpp",
+        "pal.h": "c",
+        "PAL.H": "cpp"
     }
 }

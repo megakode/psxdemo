@@ -33,6 +33,7 @@ sbeam: so something like dotLookup[ normalindex ][ ratan2(lightx - objx, lighty-
 #include <libapi.h>
 
 #include "dsrlib.h"	// Desire lib
+#include "crates.h" // crates.tim texture file
 #include "crash.h"	// 3D model: Crash bandicoot
 //#include "crash_jump.h"	// 3D model: Crash bandicoot
 #include "ball.h"	// 3D model: Amiga ball
