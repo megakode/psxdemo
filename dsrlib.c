@@ -204,9 +204,11 @@ int clutFade()
 
 const int fixedPointDecimals = 0;
 
-/*
- Create and set a world matrix based on a CameraAnimation
-*/
+// **************************************************************
+//
+// Setup a CameraAnimation based on a preset and a given number of target steps.
+//
+// **************************************************************
 void playCameraAnimation( const CameraAnimationPreset *preset , CameraAnimation *outputAnimation, int numberOfSteps)
 {
 	int deltaRotX,deltaRotY,deltaRotZ;
@@ -267,6 +269,15 @@ void playCameraAnimation( const CameraAnimationPreset *preset , CameraAnimation 
 	outputAnimation->currentRot = outputAnimation->fromRot;
 
 }
+
+// **************************************************************
+//
+// Update a CameraAnimation and output a world matrix based on it.
+// 
+// animation: the CameraAnimation to update and use for calculating the world matrix
+// outputMatrix: the world camera output matrix ready to use for SetRotMatrix and SetTransMatrix.
+// 
+// **************************************************************
 
 void updateCameraAnimation( CameraAnimation *animation, MATRIX *outputMatrix )
 {
