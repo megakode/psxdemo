@@ -56,15 +56,15 @@ const char *textLines[TEXT_LINES] = {
 "                                ",
 "                                ",
 
-"               GFX:             ",
+"              2D GFX:           ",
 "                                ",
 "               Ozan             ",
 "                                ",
-"           VisionVortex         ",
-
+"              Luther            ",
+// 3d gfx: VisionVortex
 "              Music:            ",
 "                                ",
-"              Dascon            ",
+"              NO-XS             ",
 "                                ",
 "                                ",
 

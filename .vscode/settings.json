@@ -8,6 +8,7 @@
         "DSRLIB.C": "cpp",
         "DSRLIB.H": "cpp",
         "pal.h": "c",
-        "PAL.H": "cpp"
+        "PAL.H": "cpp",
+        "TEMPLATE.C": "cpp"
     }
 }

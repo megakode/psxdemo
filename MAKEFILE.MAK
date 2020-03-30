@@ -8,6 +8,7 @@ all:
 	ccpsx -c -O2 model.c -omodel.obj -comments-c++ 
 	ccpsx -c -O2 picture.c -opicture.obj -comments-c++ 
 	ccpsx -c -O2 dsrlib.c -odsrlib.obj -comments-c++ 
+	ccpsx -c -O2 geomfade.c -ogeomfade.obj -comments-c++ 
 	ccpsx -c -O2 cubescroll.c -ocubesc.obj -comments-c++ 
 	asmpsx /g /l /oc+ /j c:\psyq\include cubeasm.asm,cubeasm.obj
 	dmpsx cubeasm.obj -b

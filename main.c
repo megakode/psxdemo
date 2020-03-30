@@ -12,13 +12,15 @@
 
 #include "land.h" 		// Land fly-over intro scene
 #include "cubescroll.h"	// Cube scroller
-#include "model.h"	// show picture
+#include "model.h"		// 3D crash bandicoot model
+#include "geomfade.h"	// simple geometry with bars used for fade sequnce
 #include "stars.h"
-#include "binaryst.h"
-#include "citadel.h"
 #include "PICTURE.H"
 #include "picfade.h"
-#include "dsrpsx.h" 		// GFX: Desire PSX logo
+
+#include "binaryst.h"	// GFX
+#include "citadel.h"	// GFX
+#include "dsrpsx.h" 	// GFX: Desire PSX logo
 
 //#include "hitmod/hitmod.h"
 //#include "pal.h"
@@ -65,8 +67,8 @@ int main()
 	*/
 	
 	// works
-	CdPlay(2,tracks,0);
-
+	
+	//CdPlay(2,tracks,0);
 
 	doPicture((u_long*)dsrpsx,256,32,16,200);
 
@@ -87,6 +89,7 @@ int main()
 	
 	doCubes();
 
+	doGeomFade();
 	doModel();
 
 }

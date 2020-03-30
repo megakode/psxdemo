@@ -448,7 +448,7 @@ int doModel()
 	}
 
 	
-	
+	/*
 	InitGeom();
 	
 	SetDispMask(0);
@@ -459,12 +459,15 @@ int doModel()
 	SetGraphDebug(0);
 	
 	InitGeom();
-	SetGeomOffset(160, 128);
+	
 	SetGeomScreen(512);
 	SetVideoMode(MODE_PAL);
 
 	SetDispMask(1);
+	*/
 
+	SetGeomOffset(160, 128);
+	SetGeomScreen(512);
 	
 	/* initialize environment for double buffer */
 	SetDefDrawEnv(&db[0].draw, 0,   0, screenWidth, screenHeight);
@@ -487,7 +490,7 @@ int doModel()
 	setRGB0(&db[0].draw, 0, 0, 100);
 	setRGB0(&db[1].draw, 0, 0, 100);
 	
-	SetBackColor(100,100,100);
+	//SetBackColor(100,100,100);
 	
 	// Allocate polygon structs and initialize them
 	
@@ -531,8 +534,8 @@ int doModel()
 		// Scripted steps
 
 		if(steps==0){
-			playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
-			//playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
+			//playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
+			playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
 		}
 
 		if( steps == 200 ){
