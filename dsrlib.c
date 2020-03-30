@@ -197,3 +197,198 @@ int clutFade()
 	return 1;
 
 }
+
+// **************************************************************
+// Camera animation 
+// *************************************************************
+
+const int fixedPointDecimals = 0;
+
+/*
+ Create and set a world matrix based on a CameraAnimation
+*/
+void playCameraAnimation( const CameraAnimationPreset *preset , CameraAnimation *outputAnimation, int numberOfSteps)
+{
+	int deltaRotX,deltaRotY,deltaRotZ;
+
+	outputAnimation->numTotalSteps = numberOfSteps;
+	outputAnimation->currentStep = 0;
+
+	// Store from/to rotation and position, and convert them to fixed point, so we can make a smoother LERP with them
+
+	outputAnimation->fromRot.vx = preset->from->rotation.vx << fixedPointDecimals;
+	outputAnimation->fromRot.vy = preset->from->rotation.vy << fixedPointDecimals;
+	outputAnimation->fromRot.vz = preset->from->rotation.vz << fixedPointDecimals;
+	outputAnimation->toRot.vx = preset->to->rotation.vx << fixedPointDecimals;
+	outputAnimation->toRot.vy = preset->to->rotation.vy << fixedPointDecimals;
+	outputAnimation->toRot.vz = preset->to->rotation.vz << fixedPointDecimals;
+
+	outputAnimation->fromPos.vx = preset->from->position.vx << fixedPointDecimals;
+	outputAnimation->fromPos.vy = preset->from->position.vy << fixedPointDecimals;
+	outputAnimation->fromPos.vz = preset->from->position.vz << fixedPointDecimals;
+	outputAnimation->toPos.vx = preset->to->position.vx << fixedPointDecimals;
+	outputAnimation->toPos.vy = preset->to->position.vy << fixedPointDecimals;
+	outputAnimation->toPos.vz = preset->to->position.vz << fixedPointDecimals;
+
+	// Calculate position deltas
+
+	outputAnimation->deltaPos.vx = (outputAnimation->toPos.vx - outputAnimation->fromPos.vx) / numberOfSteps;
+	outputAnimation->deltaPos.vy = (outputAnimation->toPos.vy - outputAnimation->fromPos.vy) / numberOfSteps;
+	outputAnimation->deltaPos.vz = (outputAnimation->toPos.vz - outputAnimation->fromPos.vz) / numberOfSteps;
+
+	// Calculate rotation deltas
+
+	deltaRotX = (preset->to->rotation.vx - preset->from->rotation.vx);
+	deltaRotY = (preset->to->rotation.vy - preset->from->rotation.vy);
+	deltaRotZ = (preset->to->rotation.vz - preset->from->rotation.vz);
+
+	// If delta rotation is more than a half circle, take the other way around
+	if(deltaRotX>2048){
+		outputAnimation->deltaRot.vx =( ((deltaRotX-2048)*-1)<<fixedPointDecimals ) / numberOfSteps;
+	} else {
+		outputAnimation->deltaRot.vx = (deltaRotX<<fixedPointDecimals) / numberOfSteps;
+	}
+
+	if(deltaRotY>2048){
+		outputAnimation->deltaRot.vy = (((deltaRotY-2048)*-1)<<fixedPointDecimals) / numberOfSteps;
+	} else {
+		outputAnimation->deltaRot.vy = (deltaRotY<<fixedPointDecimals) / numberOfSteps;
+	}
+
+	if(deltaRotZ>2048){
+		outputAnimation->deltaRot.vz = (((deltaRotZ-2048)*-1)<<fixedPointDecimals) / numberOfSteps;
+	} else {
+		outputAnimation->deltaRot.vz = (deltaRotZ<<fixedPointDecimals) / numberOfSteps;
+	}
+
+	//printf("playCameraAnimation delta pos = %d,%d,%d rot = %d,%d,%d \n", outputAnimation->deltaPos.vx, outputAnimation->deltaPos.vy, outputAnimation->deltaPos.vz, outputAnimation->deltaRot.vx, outputAnimation->deltaRot.vy, outputAnimation->deltaRot.vz);
+
+	outputAnimation->currentPos = outputAnimation->fromPos;
+	outputAnimation->currentRot = outputAnimation->fromRot;
+
+}
+
+void updateCameraAnimation( CameraAnimation *animation, MATRIX *outputMatrix )
+{
+	if(animation->currentStep >= animation->numTotalSteps){
+		return;
+	}
+
+	animation->currentStep++;
+
+	// X pos
+
+	if( animation->deltaPos.vx < 0 )
+	{
+		if(animation->currentPos.vx > animation->toPos.vx )
+		{
+			animation->currentPos.vx += animation->deltaPos.vx;
+		}
+	} 
+	else 
+	{
+		if(animation->currentPos.vx < animation->toPos.vx )
+		{
+			animation->currentPos.vx += animation->deltaPos.vx;
+		}
+	}
+
+	// Y pos	
+	
+	if( animation->deltaPos.vy < 0 )
+	{
+		if(animation->currentPos.vy > animation->toPos.vy )
+		{
+			animation->currentPos.vy += animation->deltaPos.vy;
+		}
+	} 
+	else 
+	{
+		if(animation->currentPos.vy < animation->toPos.vy )
+		{
+			animation->currentPos.vy += animation->deltaPos.vy;
+		}
+	}
+
+	
+	// Z pos
+	
+	if( animation->deltaPos.vz < 0 )
+	{
+		if(animation->currentPos.vz > animation->toPos.vz )
+		{
+			animation->currentPos.vz += animation->deltaPos.vz;
+		}
+	} 
+	else 
+	{
+		if(animation->currentPos.vz < animation->toPos.vz )
+		{
+			animation->currentPos.vz += animation->deltaPos.vz;
+		}
+	}
+
+	// X rotation
+
+	if( animation->deltaRot.vx < 0)
+	{
+		if(animation->currentRot.vx > animation->toRot.vx)
+		{
+			animation->currentRot.vx += animation->deltaRot.vx;
+		}
+	} else 
+	{
+		if(animation->currentRot.vx < animation->toRot.vx)
+		{
+			animation->currentRot.vx += animation->deltaRot.vx;
+		}
+	}
+
+	// Y rotation
+
+	if( animation->deltaRot.vy < 0)
+	{
+		if(animation->currentRot.vy > animation->toRot.vy)
+		{
+			animation->currentRot.vy += animation->deltaRot.vy;
+		}
+	} else 
+	{
+		if(animation->currentRot.vy < animation->toRot.vy)
+		{
+			animation->currentRot.vy += animation->deltaRot.vy;
+		}
+	}
+
+	// Z rotation
+
+	if( animation->deltaRot.vz < 0)
+	{
+		if(animation->currentRot.vz > animation->toRot.vz)
+		{
+			animation->currentRot.vz += animation->deltaRot.vz;
+		}
+	} else 
+	{
+		if(animation->currentRot.vz < animation->toRot.vz)
+		{
+			animation->currentRot.vz += animation->deltaRot.vz;
+		}
+	}
+
+	{
+		SVECTOR roundedRotation;
+		VECTOR roundedPosition;
+
+		roundedRotation.vx = animation->currentRot.vx >> fixedPointDecimals;
+		roundedRotation.vy = animation->currentRot.vy >> fixedPointDecimals;
+		roundedRotation.vz = animation->currentRot.vz >> fixedPointDecimals;
+
+		roundedPosition.vx = animation->currentPos.vx >> fixedPointDecimals;
+		roundedPosition.vy = animation->currentPos.vy >> fixedPointDecimals;
+		roundedPosition.vz = animation->currentPos.vz >> fixedPointDecimals;
+		
+		RotMatrix_gte(&roundedRotation, outputMatrix); // Calculate rotation matrix from vector
+		TransMatrix(outputMatrix,&roundedPosition);
+	}
+}

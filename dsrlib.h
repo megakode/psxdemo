@@ -31,26 +31,27 @@ typedef enum { FadeUp , FadeDown  } ClutFadeDirection;
 // uint16 ni3
 
 typedef struct {
-
-	short x;
-	short y;
-	short z;
-
-} ModelVertex;
+	VECTOR position;
+	SVECTOR rotation;
+} CameraPreset;
 
 typedef struct {
+	const CameraPreset *from;
+	const CameraPreset *to;
+} CameraAnimationPreset;
 
-	// Vertex indexes
-	unsigned short vi1; 
-	unsigned short vi2;
-	unsigned short vi3;
-	
-	// Normal indexes
-	unsigned short ni1; 
-	unsigned short ni2; 
-	unsigned short ni3; 
-
-} ModelFace;
+typedef struct {
+	VECTOR fromRot;	// From rotation vector
+	VECTOR fromPos;	// From position vector
+	VECTOR toPos;	// To position vector
+	VECTOR toRot;	// To rotation vector
+	VECTOR currentPos;	// Current position in the animation
+	VECTOR currentRot;	// Current rotation in the animation
+	VECTOR deltaPos; 	// The delta amount to add to currentPos for every animation step
+	VECTOR deltaRot;	// The delta amount to add to currentRot for every animation step
+	int currentStep;
+	int numTotalSteps;
+} CameraAnimation;
 
 // ************************************************************
 // Load TIM
