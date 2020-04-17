@@ -39,12 +39,16 @@ sbeam: so something like dotLookup[ normalindex ][ ratan2(lightx - objx, lighty-
 #include "ball.h"	// 3D model: Amiga ball
 
 #define OTSIZE 4096
+#define NUM_CRATES 20
+#define NUM_CRATE_POLYS NUM_CRATES*6
+#define CRATE_SIZE 30 // radius
 
 typedef struct {		
 	DRAWENV		draw;			/* drawing environment */
 	DISPENV		disp;			/* display environment */
 	u_long		ot[OTSIZE];		/* ordering table */
 	POLY_G3	*poly3s;	/* mesh cell */
+	POLY_FT4 *polysCrates;
 } DB;
 
 typedef struct {
@@ -58,6 +62,12 @@ typedef struct {
 } Model;
 
 typedef struct {
+	VECTOR position;
+	SVECTOR rotation;
+	char letter;
+} Crate;
+
+typedef struct {
 	Model *model;
 	SVECTOR *vertices;
 	int numberOfVertices;
@@ -65,9 +75,24 @@ typedef struct {
 	int currentFrame;
 } Animation;
 
+Crate crates[NUM_CRATES];
 DB	db[2];		/* double buffer */
 DB	*cdb;		/* current double buffer */
 u_long	*ot;	/* current OT */
+
+char* greetingsText[] = {
+	"AB",
+	"FAIRLIGHT"
+	"REBELS",
+	"TBL",
+	"TITAN",
+	"LEMON",
+	"VIBRANTS", // Dansk gruppe med JCH, Drax, JO, Laxity
+	"LOONIES", // The group with the danish guy i always meet in the airport to Revision
+	"CENSOR",
+	"BOOZE",
+	0
+};
 
 /*************************************************************/
 // Light stuff
@@ -155,7 +180,7 @@ void drawPolys( Model *model , POLY_G3 *dstPrimitive, MATRIX *worldMatrix)
 				addPrim(cdb->ot+otz, poly);
 	
 			} else {
-				printf("otz=%d",otz);
+				printf("otz=%d \n",otz);
 			
 			}
 			
@@ -163,6 +188,130 @@ void drawPolys( Model *model , POLY_G3 *dstPrimitive, MATRIX *worldMatrix)
 
 		//PopMatrix();
 	
+}
+
+// *************************************************************************
+// Draw crate
+//
+// Take data from 'crate' and convert into 6 x POLY_FT4 primitives,
+// starting at the one pointed to by dstPrimitive, and using the
+// position and rotation from crate and the camera data in worldMatrix.
+//
+// *************************************************************************
+
+void drawCrate( Crate *crate , POLY_FT4 *dstPrimitive, MATRIX *worldMatrix)
+{
+	int i;
+	SVECTOR pos;
+	MATRIX m = {ONE,0,0,
+				0,ONE,0,
+				0,0,ONE,
+				0,0,0};
+	VECTOR worldPos = { 0,0,0,0 };
+	VECTOR worldRot = { 0,0,0,0 };
+	MATRIX modelmatrix;
+	MATRIX inverseLightMatrix;
+	MATRIX ls;
+	long p,otz,flag;
+	
+	const static SVECTOR crateVertices[8] = {
+		{-CRATE_SIZE,-CRATE_SIZE,-CRATE_SIZE,0},
+		{CRATE_SIZE,-CRATE_SIZE,-CRATE_SIZE,0},
+		{-CRATE_SIZE,CRATE_SIZE,-CRATE_SIZE,0},
+		{CRATE_SIZE,CRATE_SIZE,-CRATE_SIZE,0},
+		{-CRATE_SIZE,-CRATE_SIZE,CRATE_SIZE,0},
+		{CRATE_SIZE,-CRATE_SIZE,CRATE_SIZE,0},
+		{-CRATE_SIZE,CRATE_SIZE,CRATE_SIZE,0},
+		{CRATE_SIZE,CRATE_SIZE,CRATE_SIZE,0}
+	};
+
+	const static int crateVertexIndexes[24] = {
+		0,1,2,3, // front
+		4,0,6,2, // left 
+		1,5,3,7, // right 
+		4,5,0,1, // top 
+		2,3,6,7, // bottom
+		5,4,7,6  // back
+	};
+
+	int vertexIndex = 0;
+	int u,v,letterIndex;
+
+	RotMatrixZYX(&crate->rotation, &modelmatrix); // Calculate rotation matrix from vector
+	TransMatrix(&modelmatrix,&crate->position);
+
+	// Create a rotation matrix for the light
+	TransposeMatrix(&modelmatrix, &inverseLightMatrix);
+	ApplyMatrixSV(&inverseLightMatrix,(SVECTOR*)&lightDirVec,(SVECTOR*)&llm);
+
+	/* make local-screen coordinate */
+	CompMatrix(worldMatrix, &modelmatrix, &ls);
+
+	/* set matrix*/
+	
+	SetRotMatrix(&ls);		
+	SetTransMatrix(&ls);
+	
+	SetColorMatrix(&lcm);
+	SetLightMatrix(&llm);
+
+	letterIndex = crate->letter - 65; // Upper case 'A' = 65, the letter our texture font starts with
+	u = (letterIndex & 0x03) << 5; // lower 2 bits (because there are 4 columns of letters in the texture: u = 0..3 )
+	v = (letterIndex & 0xfc) << 3;  // upper 6 bits
+	//printf("draw crate %c letterIndex=%d u=%d v=%d",crate->letter,letterIndex,u,v);
+	{
+		int faceIndex = 0;
+
+		for(faceIndex = 0 ; faceIndex < 6 ; faceIndex++ )
+		{
+			int retVal = RotAverageNclip4((SVECTOR*)&crateVertices[crateVertexIndexes[vertexIndex]],
+							(SVECTOR*)&crateVertices[crateVertexIndexes[vertexIndex+1]],
+							(SVECTOR*)&crateVertices[crateVertexIndexes[vertexIndex+2]],
+							(SVECTOR*)&crateVertices[crateVertexIndexes[vertexIndex+3]],
+							(long *)&dstPrimitive->x0,
+							(long *)&dstPrimitive->x1,
+							(long *)&dstPrimitive->x2,
+							(long *)&dstPrimitive->x3,
+							&p,&otz,&flag);
+
+			setRGB0(dstPrimitive,128,128,128);
+			setUV4(dstPrimitive,u,v,u+32,v,u,v+32,u+32,v+32);
+			dstPrimitive->tpage = GetTPage(2,0,320,0);
+			if(otz>=0&&otz<OTSIZE && retVal >= 0){
+				addPrim(cdb->ot+otz, dstPrimitive);
+				dstPrimitive++;
+			}
+			vertexIndex+=4;
+			
+		}
+	
+	}
+
+}
+
+void resetCrates(char *string, int startx, int startZ)
+{
+	int i = 0;
+	const int horizontalCrateSpacing = 110;
+
+	for(i=0;i<NUM_CRATES;i++){
+		crates[i].letter = 0;
+	}
+
+	i = 0;
+
+	while(*string != 0){
+		crates[i].letter = *string;
+		crates[i].position.vx = startx + i*horizontalCrateSpacing;
+		crates[i].position.vy = 0;
+		crates[i].position.vz = startZ;
+		crates[i].rotation.vy = 0;
+		crates[i].rotation.vx = 0;
+
+		string++;
+		i++;
+	}
+
 }
 
 void updateAnimation(Animation *animation)
@@ -176,6 +325,8 @@ void updateAnimation(Animation *animation)
 	animation->model->vertices = animation->vertices + animation->currentFrame * animation->numberOfVertices;
 	animation->currentFrame+=1;
 }
+
+
 
 int doModel()
 {
@@ -253,6 +404,8 @@ int doModel()
 	db[1].draw.dtd = 1;
 	setRGB0(&db[0].draw, 0, 0, 100);
 	setRGB0(&db[1].draw, 0, 0, 100);
+
+	loadTIM((unsigned char*)&cratesTex);
 	
 	//SetBackColor(100,100,100);
 	
@@ -263,6 +416,10 @@ int doModel()
 		
 		db[0].poly3s = (POLY_G3*)malloc(sizeof(POLY_G3)*numPoly3s);
 		db[1].poly3s = (POLY_G3*)malloc(sizeof(POLY_G3)*numPoly3s);
+		db[0].polysCrates = (POLY_FT4*)malloc(sizeof(POLY_FT4)*NUM_CRATE_POLYS);
+		db[1].polysCrates = (POLY_FT4*)malloc(sizeof(POLY_FT4)*NUM_CRATE_POLYS);
+
+		printf("%d bytes allocated for poly structs \n",sizeof(POLY_G3)*numPoly3s*2+sizeof(POLY_FT4)*NUM_CRATE_POLYS*2 );
 
 		for(i=0;i<numPoly3s;i++)
 		{
@@ -271,13 +428,23 @@ int doModel()
 			SetSemiTrans( (db[0].poly3s+i) , 0);
 			SetSemiTrans( (db[1].poly3s+i) , 0);
 		}
+
+		for(i=0;i<NUM_CRATE_POLYS;i++)
+		{
+			setPolyFT4(db[0].polysCrates+i);
+			setPolyFT4(db[1].polysCrates+i);
+		}
 		
 	}
+
+	
 			
 	while(1)
 	{
 		static int animationTrigger = 0;
 		static int steps = 0;
+		static int cratesResetZ = -200;
+		static int greetingsIndex = 0;
 		
 		MATRIX m;
 		POLY_G3 *currentDstPoly;
@@ -288,16 +455,18 @@ int doModel()
 		
 		pad = PadRead(0);
 		
-		if (pad & PADLup) camera = cameraDefault;
-		if (pad & PADLleft)	camera = cameraFacingRight;
-		if (pad & PADLdown)	camera = cameraFacingCamera;
+		//if (pad & PADLup) camera = cameraDefault;
+		
+		if (pad & PADLup)	{ cratesResetZ = 1400; }
+		if (pad & PADLdown) { cratesResetZ = -50; }
 
 		if (pad & PADRleft) playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
 		if (pad & PADRright) playCameraAnimation(&cameraAnimationRunRight,&cameraAnimation,200);
 
 		// Scripted steps
-
+/*
 		if(steps==0){
+
 			//playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
 			playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
 		}
@@ -312,6 +481,11 @@ int doModel()
 			RotMatrix_gte(&camera.rotation, &m);
 			TransMatrix(&m,&camera.position);
 		}
+		*/
+
+		camera = cameraFacingCamera;
+		RotMatrix_gte(&camera.rotation, &m);
+		TransMatrix(&m,&camera.position);
 
 		// Set camera
 
@@ -341,7 +515,32 @@ int doModel()
 			updateAnimation(&animation);
 			animationTrigger = 0;
 		}
-		
+
+		// crates
+
+		resetCrates(greetingsText[greetingsIndex],-160,cratesResetZ);
+
+		// Loop through crates and drawCrate if crates[i].letter != 0
+		{
+			int crateIndex;
+			for(crateIndex=0;crateIndex<NUM_CRATES;crateIndex++)
+			{
+				if(crates[crateIndex].letter == 0){ break; }
+				drawCrate(&crates[crateIndex],cdb->polysCrates+6*crateIndex,&m);
+			}
+		}
+
+		// z = [-800 .. 1800 ]
+		/*
+		cratesResetZ += 10;
+		if(cratesResetZ >= 1400 ){
+			cratesResetZ = -50;
+			greetingsIndex++;
+			if(greetingsText[greetingsIndex] == 0){
+				greetingsIndex = 0;
+			}
+		}
+*/
 		// add Poly 3s
 
 		currentDstPoly = cdb->poly3s;
@@ -357,10 +556,11 @@ int doModel()
 		DrawSync(0);
 		VSync(0);
 
-		PutDrawEnv(&cdb->draw); /* update drawing environment */
 		PutDispEnv(&cdb->disp); /* update display environment */
+		PutDrawEnv(&cdb->draw); /* update drawing environment */
+		
 		DrawOTag(cdb->ot+OTSIZE-1);	  /* draw */
-	//return;
+
 	}
 	
 	free(db[0].poly3s);

@@ -9,6 +9,7 @@
         "DSRLIB.H": "cpp",
         "pal.h": "c",
         "PAL.H": "cpp",
-        "TEMPLATE.C": "cpp"
+        "TEMPLATE.C": "cpp",
+        "libmath.h": "c"
     }
 }

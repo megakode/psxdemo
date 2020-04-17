@@ -69,7 +69,7 @@ int main()
 	// works
 	
 	//CdPlay(2,tracks,0);
-
+/*
 	doPicture((u_long*)dsrpsx,256,32,16,200);
 
 	doLandscape();
@@ -90,6 +90,7 @@ int main()
 	doCubes();
 
 	doGeomFade();
+	*/
 	doModel();
 
 }
