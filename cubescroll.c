@@ -409,8 +409,8 @@ void doCubes()
 	
 	InitGeom();
 */
-	gte_SetGeomOffset(0, 0);	
-	gte_SetGeomScreen(SCR_Z);	
+	SetGeomOffset(0, 0);	
+	SetGeomScreen(SCR_Z);	
 	//SetVideoMode(MODE_PAL);
 	
 

@@ -81,7 +81,7 @@ DB	*cdb;		/* current double buffer */
 u_long	*ot;	/* current OT */
 
 char* greetingsText[] = {
-	"AB",
+	"ABYSS",
 	"FAIRLIGHT"
 	"REBELS",
 	"TBL",
@@ -305,8 +305,9 @@ void resetCrates(char *string, int startx, int startZ)
 		crates[i].position.vx = startx + i*horizontalCrateSpacing;
 		crates[i].position.vy = 0;
 		crates[i].position.vz = startZ;
-		crates[i].rotation.vy = 0;
-		crates[i].rotation.vx = 0;
+		crates[i].rotation.vy = 1;
+		crates[i].rotation.vx = 1;
+		crates[i].rotation.vz = 0;
 
 		string++;
 		i++;
@@ -341,14 +342,14 @@ int doModel()
 	const CameraPreset cameraRunLeftEnd = {{-1000,220,1100,0},{0,860,0,0}};
 
 	const CameraPreset cameraFacingCamera 	= { { 0,110,200,0} , {0,20,0,0} };
-	const CameraPreset cameraFacingCameraZoomedALittleMore 	= { { 0,280,310,0} , {-600,20,0,0} };
+	const CameraPreset cameraFacingCameraZoomedALittleMore 	= { { 0,110,800,0} , {0,20,0,0} };
 	const CameraPreset cameraDefault 			= { { 0,100,1000,0 } , { 0,0,0,0 } };
 	const CameraPreset cameraFacingRight 		= { {-10,110,150,0} , {0,-970,0,0} };
 
 	const CameraAnimationPreset cameraAnimationRunRight = { &cameraRunRightBegin , &cameraRunRightEnd };
 	const CameraAnimationPreset cameraAnimationRunLeft = { &cameraRunLeftBegin , &cameraRunLeftEnd };
 
-	const CameraAnimationPreset cameraAnimationZoomFace = { &cameraFacingCamera, &cameraFacingCameraZoomedALittleMore };
+	const CameraAnimationPreset cameraAnimationZoomFace = { &cameraFacingCameraZoomedALittleMore, &cameraFacingCamera  };
 	
 	// current camera animation
 	CameraAnimation cameraAnimation =  {0,0,0,0,0,0,0,0,0,0}; 
@@ -359,7 +360,7 @@ int doModel()
 
 	int numModels = 2;
 	int ballvelocity = -10;
-	VECTOR ballposition = {0,-BALL_RADIUS,300,0};
+	VECTOR ballposition = {0,-BALL_RADIUS*4,300,0};
 	SVECTOR ballRotation = {0,0,0,0};
 	VECTOR bodyposition = {0,0,0,0};
 	SVECTOR bodyrotation = {0,0,0,0};
@@ -445,6 +446,8 @@ int doModel()
 		static int steps = 0;
 		static int cratesResetZ = -200;
 		static int greetingsIndex = 0;
+		static int showCrates = 0;
+		static int showBall = 0;
 		
 		MATRIX m;
 		POLY_G3 *currentDstPoly;
@@ -464,29 +467,30 @@ int doModel()
 		if (pad & PADRright) playCameraAnimation(&cameraAnimationRunRight,&cameraAnimation,200);
 
 		// Scripted steps
-/*
-		if(steps==0){
 
+		if(steps==0){
 			//playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
 			playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
-		}
+		}  
 
 		if( steps == 200 ){
 			playCameraAnimation(&cameraAnimationRunRight,&cameraAnimation,200);
+		}  
+
+		if( steps == 400 )
+		{
+			playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
 		}
 
-		if( steps >= 400 )
-		{
+		if( steps >= 600 ) {
 			camera = cameraFacingCamera;
 			RotMatrix_gte(&camera.rotation, &m);
 			TransMatrix(&m,&camera.position);
+			// start ball and crates
+			showBall = 1;
+			showCrates = 1;
 		}
-		*/
-
-		camera = cameraFacingCamera;
-		RotMatrix_gte(&camera.rotation, &m);
-		TransMatrix(&m,&camera.position);
-
+		
 		// Set camera
 
 		if( cameraAnimation.currentStep < cameraAnimation.numTotalSteps ){
@@ -499,15 +503,17 @@ int doModel()
 		steps++;
 
 		// update animation
+		if(showBall)
+		{
+			modelBall.rotation->vx += 10;
+			modelBall.position->vy += ballvelocity;
+			
+			if(modelBall.position->vy >= -BALL_RADIUS){
+				ballvelocity = -17;
+			}
 
-		modelBall.rotation->vx += 10;
-		modelBall.position->vy += ballvelocity;
-		
-		if(modelBall.position->vy >= -BALL_RADIUS){
-			ballvelocity = -17;
+			ballvelocity+=1;
 		}
-
-		ballvelocity+=1;
 
 		animationTrigger += 1;
 		if(animationTrigger == 2)
@@ -518,29 +524,35 @@ int doModel()
 
 		// crates
 
-		resetCrates(greetingsText[greetingsIndex],-160,cratesResetZ);
-
-		// Loop through crates and drawCrate if crates[i].letter != 0
+		if(showCrates)
 		{
-			int crateIndex;
-			for(crateIndex=0;crateIndex<NUM_CRATES;crateIndex++)
+			
+			resetCrates(greetingsText[greetingsIndex],-160,cratesResetZ);
+
+			// Loop through crates and drawCrate if crates[i].letter != 0
 			{
-				if(crates[crateIndex].letter == 0){ break; }
-				drawCrate(&crates[crateIndex],cdb->polysCrates+6*crateIndex,&m);
+				int crateIndex;
+				for(crateIndex=0;crateIndex<NUM_CRATES;crateIndex++)
+				{
+					if(crates[crateIndex].letter == 0){ break; }
+					drawCrate(&crates[crateIndex],cdb->polysCrates+6*crateIndex,&m);
+				}
 			}
+
+			// z = [-800 .. 1800 ]
+			
+			cratesResetZ += 10;
+			if(cratesResetZ >= 1800 ){
+				cratesResetZ = -50;
+				greetingsIndex++;
+				if(greetingsText[greetingsIndex] == 0){
+					greetingsIndex = 0;
+				}
+			}
+
 		}
 
-		// z = [-800 .. 1800 ]
-		/*
-		cratesResetZ += 10;
-		if(cratesResetZ >= 1400 ){
-			cratesResetZ = -50;
-			greetingsIndex++;
-			if(greetingsText[greetingsIndex] == 0){
-				greetingsIndex = 0;
-			}
-		}
-*/
+
 		// add Poly 3s
 
 		currentDstPoly = cdb->poly3s;
