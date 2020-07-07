@@ -449,7 +449,7 @@ void doLandscape()
 	while (ticks < 500) 
 	{
 		ticks++;
-		printf("ticks %d \n",ticks);
+		//printf("ticks %d \n",ticks);
 		cdb  = (cdb == landscapeSceneBuffers[0]) ? landscapeSceneBuffers[1] : landscapeSceneBuffers[0];
 		
 		PutDispEnv(&cdb->disp);

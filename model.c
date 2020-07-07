@@ -82,6 +82,7 @@ u_long	*ot;	/* current OT */
 
 char* greetingsText[] = {
 	"ABYSS",
+	"DEADLINERS",
 	"FAIRLIGHT"
 	"REBELS",
 	"TBL",
@@ -89,9 +90,8 @@ char* greetingsText[] = {
 	"LEMON",
 	"VIBRANTS", // Dansk gruppe med JCH, Drax, JO, Laxity
 	"LOONIES", // The group with the danish guy i always meet in the airport to Revision
-	"CENSOR",
-	"BOOZE",
-	0
+	"LOGICOMA", // Because they rock and i follow Ferris on Twitter
+	0 // the scroller ends when it reaches a null pointer
 };
 
 /*************************************************************/
@@ -334,6 +334,7 @@ int doModel()
 	const static int screenWidth = 320;
 	const static int screenHeight = 256;
 	const static int BALL_RADIUS = 184;
+	static int ballHasFinished = 0;
 
 	const CameraPreset cameraRunRightBegin 	= { {-400,170,1100,0} , {0,-590,0,0} };
 	const CameraPreset cameraRunRightEnd 	= { {1000,170,730,0} , {0,-890,0,0} };
@@ -440,7 +441,7 @@ int doModel()
 
 	
 			
-	while(1)
+	while(!ballHasFinished)
 	{
 		static int animationTrigger = 0;
 		static int steps = 0;
@@ -448,6 +449,10 @@ int doModel()
 		static int greetingsIndex = 0;
 		static int showCrates = 0;
 		static int showBall = 0;
+		static int ballBouncesOffScreen = 0;
+		static int scrollerHasFinished = 0;
+		static int moveBall = 1;
+		
 		
 		MATRIX m;
 		POLY_G3 *currentDstPoly;
@@ -459,13 +464,13 @@ int doModel()
 		pad = PadRead(0);
 		
 		//if (pad & PADLup) camera = cameraDefault;
-		
-		if (pad & PADLup)	{ cratesResetZ = 1400; }
-		if (pad & PADLdown) { cratesResetZ = -50; }
+		/*
+		if (pad & PADLup)	{ modelBall.position->vz -= 5; printf("ball->vz=%u",modelBall.position->vz); }
+		if (pad & PADLdown) { modelBall.position->vz += 5; printf("ball->vz=%u",modelBall.position->vz); }
 
 		if (pad & PADRleft) playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);
 		if (pad & PADRright) playCameraAnimation(&cameraAnimationRunRight,&cameraAnimation,200);
-
+*/
 		// Scripted steps
 
 		if(steps==0){
@@ -482,7 +487,7 @@ int doModel()
 			playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
 		}
 
-		if( steps >= 600 ) {
+		if( steps == 600 ) {
 			camera = cameraFacingCamera;
 			RotMatrix_gte(&camera.rotation, &m);
 			TransMatrix(&m,&camera.position);
@@ -507,13 +512,40 @@ int doModel()
 		{
 			modelBall.rotation->vx += 10;
 			modelBall.position->vy += ballvelocity;
-			
+			if(ballBouncesOffScreen && modelBall.position->vz >= 60){
+				modelBall.position->vz -= 5;
+			}
+
+			// If ball hits floor, bounce it back up
 			if(modelBall.position->vy >= -BALL_RADIUS){
-				ballvelocity = -17;
+
+				if(!ballBouncesOffScreen)
+				{	
+					ballvelocity = -17;
+					// If scroller is finished, let this be the last bounce
+					if(scrollerHasFinished)
+					{
+						ballBouncesOffScreen = 1;
+						ballvelocity = -27; // Give the ball a much higher jump velocity on the last bounce (so we have time to move it towards the camera)
+					}
+				} else 
+				{
+					// This is where the ball hits the floor (but continues down)
+					// Hide Crash here so it looks like we have hit him (poor guy)
+					modelBody.position->vy = 1000;
+					if(modelBall.position->vy >= BALL_RADIUS ){
+						showBall = 0;
+						ballHasFinished = 1;
+						printf("ball has finished");
+					}
+				}
 			}
 
 			ballvelocity+=1;
+
 		}
+
+
 
 		animationTrigger += 1;
 		if(animationTrigger == 2)
@@ -546,7 +578,12 @@ int doModel()
 				cratesResetZ = -50;
 				greetingsIndex++;
 				if(greetingsText[greetingsIndex] == 0){
-					greetingsIndex = 0;
+					// Wrap scroller
+					// greetingsIndex = 0;
+
+					// Hide crates and trigger ball bouncing off screen
+					showCrates = 0;
+					scrollerHasFinished = 1;
 				}
 			}
 

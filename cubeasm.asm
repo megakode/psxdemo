@@ -36,8 +36,8 @@
 		
 CubeAsm:
 
-		li		t0, 4096/3
-		ctc2	t0, C2_ZSF3
+		;li		t0, 4096/3
+		;ctc2	t0, C2_ZSF3
 		
 
 		li		t2, 12				; iteration count
