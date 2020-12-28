@@ -475,6 +475,8 @@ int doModel()
 */
 		// Scripted steps
 
+		printf("steps=%u \n",steps);
+
 		if(steps==0){
 			//playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
 			playCameraAnimation(&cameraAnimationRunLeft,&cameraAnimation,200);

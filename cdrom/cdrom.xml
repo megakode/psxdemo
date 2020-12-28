@@ -166,6 +166,6 @@
 		be impossible to compile libflac under Windows and that most people usually use XA audio over CDDA anyway.
 	-->
 	<!-- <track type="audio" source="./cdrom/drax_-_illusions.wav"/> -->
-	<track type="audio" source="./cdrom/AnotherMile3.wav"/>
+	<track type="audio" source="./cdrom/AnotherMile8.wav"/>
 	
 </iso_project>

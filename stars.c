@@ -64,7 +64,7 @@ const char *textLines[TEXT_LINES] = {
 // 3d gfx: VisionVortex
 "              Music:            ",
 "                                ",
-"              NO-XS             ",
+"              No-XS             ",
 "                                ",
 "                                ",
 

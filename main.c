@@ -54,18 +54,7 @@ int main()
 	SetDispMask(1);
 	
 	SetFarColor(10,10,10);
-	
-	/*
-	MOD_Init();
-	
-	// Returns 1 for success, 0 for failure 
-	if(!MOD_Load((unsigned char*)pal)){
-		printf("ERROR loading module!!!");
-	};
 
-	MOD_Start();
-	*/
-	
 	// works
 	
 	CdPlay(2,tracks,0);
