@@ -82,10 +82,12 @@ u_long	*ot;	/* current OT */
 
 char* greetingsText[] = {
 	"ABYSS",
+	"CENSOR",
 	"DEADLINERS",
 	"FAIRLIGHT"
 	"REBELS",
 	"TBL",
+	"GP",
 	"TITAN",
 	"LEMON",
 	"VIBRANTS", // Dansk gruppe med JCH, Drax, JO, Laxity
@@ -487,12 +489,16 @@ int doModel()
 			playCameraAnimation(&cameraAnimationZoomFace,&cameraAnimation,200);
 		}
 
+		if(steps==475){ // før 480
+			showBall = 1;
+		}
+
 		if( steps == 600 ) {
 			camera = cameraFacingCamera;
 			RotMatrix_gte(&camera.rotation, &m);
 			TransMatrix(&m,&camera.position);
 			// start ball and crates
-			showBall = 1;
+			
 			showCrates = 1;
 		}
 		

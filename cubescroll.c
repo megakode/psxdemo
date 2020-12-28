@@ -33,7 +33,8 @@
 #define VERT_DISTANCE_BETWEEN_CUBES 12
 #define CS (8 / 2) // half because all points are offset from the cube center by this value
 
-const char *scrollText = "    KEEPING THE SCENE ALIVE ";
+//const char *scrollText = "    KEEPING THE SCENE ALIVE ";
+  const char *scrollText = "    THE PSX NEEDS DEMOSCENE LOVE TOO  ";
 //const char *scrollText = "    TEST! ";
 int scrollTextLetterIndex = 0;
 int scrollTextPixelIndex = 0;
